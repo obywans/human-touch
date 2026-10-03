@@ -96,6 +96,10 @@ tests/                    inputs, recorded outputs, expectations, checker
 README.md, LICENSE, .gitignore
 ```
 
+## Dedication
+
+Con cariño para Maia, de parte de Leonardo.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
