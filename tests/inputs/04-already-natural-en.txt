@@ -1,0 +1,1 @@
+Quick update: the migration script works on staging. I still need to test the rollback path, so I won't push to prod before Thursday. If you see anything weird in the logs, ping me.

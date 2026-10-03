@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+
+# Local assistant settings and worktrees (never commit personal config)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Python (tests/check_outputs.py)
+__pycache__/
+*.pyc
