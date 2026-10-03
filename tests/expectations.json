@@ -1,0 +1,52 @@
+{
+  "_comment": "must_keep: exact substrings that must survive the rewrite (facts, names, terms). must_not: phrases that the rewrite must not contain (case-insensitive). The 'Notes:' line is ignored. Generic_must_not applies to every case.",
+  "generic_must_not": [
+    "In today's world",
+    "It's important to note",
+    "In conclusion",
+    "In summary",
+    "Ultimately",
+    "Firstly",
+    "Secondly",
+    "Moreover",
+    "Furthermore",
+    "Additionally",
+    "crucial",
+    "cornerstone",
+    "underscore",
+    "delve",
+    "tapestry",
+    "testament",
+    "landscape",
+    "seamless",
+    "robust",
+    "leverage",
+    "Cabe destacar",
+    "En definitiva",
+    "En el mundo empresarial",
+    "Además",
+    "—"
+  ],
+  "cases": {
+    "01-generic-ai-en": {
+      "must_keep": ["team"],
+      "must_not": []
+    },
+    "02-professional-es": {
+      "must_keep": ["Estimado Carlos", "14 de marzo", "12.500 €", "Ana García"],
+      "must_not": []
+    },
+    "03-casual-en": {
+      "must_keep": ["Maria", "coffee", "report"],
+      "must_not": []
+    },
+    "04-already-natural-en": {
+      "must_keep": ["migration script", "staging", "rollback", "Thursday", "logs"],
+      "must_not": []
+    },
+    "05-long-form-en": {
+      "must_keep": ["1,200", "62%", "45 minutes", "38%", "2023", "three countries"],
+      "must_not": ["significant development", "It is important to recognize"]
+    }
+  }
+}
