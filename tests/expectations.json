@@ -1,5 +1,5 @@
 {
-  "_comment": "must_keep: exact substrings that must survive the rewrite (facts, names, terms). must_not: phrases that the rewrite must not contain (case-insensitive). The 'Notes:' line is ignored. Generic_must_not applies to every case.",
+  "_comment": "must_keep: exact substrings that must survive the rewrite (facts, names, terms, and the strength of the author's own claims such as praise). must_not: phrases that the rewrite must not contain (case-insensitive). The Notes line is ignored. generic_must_not applies to every case.",
   "generic_must_not": [
     "In today's world",
     "It's important to note",
@@ -25,6 +25,15 @@
     "En definitiva",
     "En el mundo empresarial",
     "Además",
+    "Il est important de noter",
+    "Dans le monde d'aujourd'hui",
+    "Il convient de souligner",
+    "Par ailleurs",
+    "En conclusion",
+    "În lumea de astăzi",
+    "Este important de menționat",
+    "Este important de subliniat",
+    "În concluzie",
     "—"
   ],
   "cases": {
@@ -47,6 +56,26 @@
     "05-long-form-en": {
       "must_keep": ["1,200", "62%", "45 minutes", "38%", "2023", "three countries"],
       "must_not": ["significant development", "It is important to recognize"]
+    },
+    "06-generic-ai-fr": {
+      "must_keep": ["communication"],
+      "must_not": []
+    },
+    "07-generic-ai-ro": {
+      "must_keep": ["echipei"],
+      "must_not": []
+    },
+    "08-professional-fr": {
+      "must_keep": ["Madame Martin", "lot 3", "12 mai 2026", "8 400 €", "Julien Moreau", "quatre ingénieurs", "exemplaire"],
+      "must_not": []
+    },
+    "09-professional-ro": {
+      "must_keep": ["doamnă Ionescu", "lotului 3", "12 mai 2026", "8.400 lei", "Andrei Popescu", "patru ingineri", "exemplară"],
+      "must_not": []
+    },
+    "10-translate-en-to-ro": {
+      "must_keep": ["Andrei Popescu", "2026", "8.400", "lotului 3", "exemplară"],
+      "must_not": ["Dear ", "Kind regards", "It is important"]
     }
   }
 }

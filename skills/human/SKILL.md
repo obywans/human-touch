@@ -1,6 +1,6 @@
 ---
 name: human
-description: Rewrites text so it reads like natural, human-written prose. Keeps the meaning, facts, language, terminology and the author's tone, and removes formulaic, repetitive or template-sounding patterns. Invoke only when the user types /human. It improves writing quality and does not target or guarantee any AI-detector result.
+description: Rewrites text so it reads like natural, human-written prose in any language, with specific notes for English, Spanish, French and Romanian. Keeps the meaning, facts, language, terminology and the author's tone, and removes formulaic, repetitive or template-sounding patterns. Invoke only when the user types /human. It improves writing quality and does not target or guarantee any AI-detector result.
 argument-hint: "[text, or path to a text file]"
 disable-model-invocation: true
 ---
@@ -28,6 +28,37 @@ Before rewriting, note internally:
 - **Facts and specifics.** Every number, date, name, place, quote, URL, code, identifier, version, price, and legal or technical term.
 - **Required terminology.** Terms the author uses on purpose, even if they look repetitive.
 - **Every claim.** Each point the text makes. Do not add claims, and do not drop any.
+
+Detect the source language first, then apply the matching notes in the Languages section. For any language not listed there, use only the general rules in section 3. Do not force English phrases onto other languages.
+
+## Languages
+
+These notes are starting points, not complete lists. Apply them only where the text actually shows the pattern.
+
+### English
+
+Use the general lists in section 3.
+
+### Spanish
+
+- Filler openers: "En el mundo empresarial actual", "Cabe destacar que", "Es importante señalar que", "En el panorama actual".
+- Connector stacks: "Además", "Asimismo", "Por otro lado", "En definitiva", "En resumen".
+- Inflated vocabulary: "crucial", "fundamental", "pivotal", "robusto", "integral", "innovador", "excepcional", "notable".
+- Keep the formal or informal address (usted, tú, vosotros) that the source uses.
+
+### French
+
+- Filler openers: "Dans le monde d'aujourd'hui", "Il est important de noter que", "Il convient de souligner que", "Force est de constater que".
+- Connector stacks: "Par ailleurs", "En outre", "De plus", "Premièrement / Deuxièmement / Enfin".
+- Inflated vocabulary: "crucial", "primordial", "témoigne de", "pierre angulaire", "remarquable", "exemplaire".
+- Keep French typography: a space before `: ; ! ?`, and the « » quotation marks. Keep the vous or tu address that the source uses.
+
+### Romanian
+
+- Filler openers: "În lumea de astăzi", "Este important de menționat că", "Este important de subliniat că".
+- Connector stacks: "În primul rând / În al doilea rând", "În concluzie", "De asemenea", "Mai mult decât atât".
+- Inflated vocabulary: "crucial", "esențial", "pivotal", "remarcabil", "exemplar", "piatra de temelie", "consolidează".
+- Keep the diacritics (ă â î ș ț) exactly. Do not strip them. Keep the formal or informal address (dumneavoastră, tu) that the source uses.
 
 ## 3. Remove the artificial patterns
 
@@ -62,9 +93,10 @@ Never make a formal text informal. Never make an informal text stiff.
 
 - Do not change facts, figures, names, dates, quotes, code, URLs, or required terms.
 - Do not add claims, examples, citations, or sources that are not in the input.
+- Keep the strength of the author's claims and praise. Do not soften a word such as "exemplary", "remarkable" or "exceptional" into a weaker word such as "good". Removing filler is allowed; weakening a judgment is not. In translation, use the equivalent word with the same strength.
 - Do not add typos, grammar errors, or fake imperfections on purpose.
 - Do not add slang, emojis, or jokes the author did not write.
-- Do not change the language.
+- Do not change the language, unless the user explicitly asks for a translation (for example "to Romanian"). Then translate the rewritten text into the requested language as natural prose in that language, not word for word, and keep every fact, figure, name and date.
 - Do not state or imply any detector score or guarantee.
 
 ## 6. Self-check before answering

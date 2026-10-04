@@ -7,8 +7,8 @@ For each case it checks that:
   - every must_keep substring is still present (facts, names, terms);
   - no generic or case-specific must_not phrase appears (case-insensitive);
   - the rewrite contains no em dash.
-The line starting with "Notes:" is ignored, because it describes the edits.
-Exit code is 1 if any case fails.
+The line starting with "Notes:" (or "Notes :" in French) is ignored, because it
+describes the edits. Exit code is 1 if any case fails.
 """
 import json
 import pathlib
@@ -20,7 +20,9 @@ EXPECT = json.loads((ROOT / "expectations.json").read_text(encoding="utf-8"))
 
 def body(text: str) -> str:
     return "\n".join(
-        line for line in text.splitlines() if not line.lstrip().startswith("Notes:")
+        line
+        for line in text.splitlines()
+        if not line.lstrip().startswith(("Notes:", "Notes :"))
     )
 
 
