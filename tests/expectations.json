@@ -38,7 +38,7 @@
   ],
   "cases": {
     "01-generic-ai-en": {
-      "must_keep": ["team"],
+      "must_keep": ["team", "high-performing"],
       "must_not": []
     },
     "02-professional-es": {
@@ -54,15 +54,15 @@
       "must_not": []
     },
     "05-long-form-en": {
-      "must_keep": ["1,200", "62%", "45 minutes", "38%", "2023", "three countries"],
+      "must_keep": ["1,200", "62%", "45 minutes", "38%", "2023", "three countries", "choices"],
       "must_not": ["significant development", "It is important to recognize"]
     },
     "06-generic-ai-fr": {
-      "must_keep": ["communication"],
+      "must_keep": ["communication", "performantes"],
       "must_not": []
     },
     "07-generic-ai-ro": {
-      "must_keep": ["echipei"],
+      "must_keep": ["echipei", "performante"],
       "must_not": []
     },
     "08-professional-fr": {

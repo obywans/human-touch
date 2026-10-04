@@ -27,7 +27,7 @@ Before rewriting, note internally:
 - **Register.** Casual chat, professional email, report, academic, marketing, or narrative.
 - **Facts and specifics.** Every number, date, name, place, quote, URL, code, identifier, version, price, and legal or technical term.
 - **Required terminology.** Terms the author uses on purpose, even if they look repetitive.
-- **Every claim.** Each point the text makes. Do not add claims, and do not drop any.
+- **Every claim.** Each point the text makes. Do not add claims, and do not drop any. Before rewriting, list the claims of the source, one per line. Every line must still be present in the rewrite, even if the wording or the sentence changes.
 
 Detect the source language first, then apply the matching notes in the Languages section. For any language not listed there, use only the general rules in section 3. Do not force English phrases onto other languages.
 
@@ -67,12 +67,12 @@ Fix these where they occur. Not every instance is a problem. Fix the ones that m
 - **Dashes and punctuation.** Replace em dashes and stacked punctuation with commas, periods, colons, or parentheses where that reads better. Keep dashes that are the author's habit or that mark ranges, lists, or numbers.
 - **Filler openers.** "In today's world", "It's important to note that", "In the realm of", "Let's dive in", "Certainly!", "Great question". Start with the content.
 - **Formulaic sequencing.** "Firstly / Secondly / Finally", and stacks of "Moreover / Furthermore / Additionally / In addition". Use transitions only when the logic needs one.
-- **Conclusions that repeat the introduction.** Cut them, or replace them with a concrete point, next step, or open question taken from the text.
+- **Conclusions that repeat the introduction.** Cut the repetition, but keep any claim that appears only in the conclusion. Replace the conclusion with a concrete point, next step, or open question taken from the text. Removing a sentence is allowed only when every claim in it survives in another sentence.
 - **Unnecessary structure.** Headings, bullets, and bold in short text where a paragraph would do. Keep structure the content needs.
 - **Reflexive triads and contrasts.** "Not just X, but Y", "It's not about X, it's about Y", and lists of three where two or four items fit the content.
 - **Vague claims.** "Many experts agree", "significant benefits", "a wide range of". If the source gives no specifics, keep the claim as vague as the source is. Do not invent specifics. Mention the gap in the Notes line.
 - **Excess hedging.** Stacks such as "may potentially be able to". Keep the hedges that reflect real uncertainty.
-- **Inflated vocabulary.** "crucial", "pivotal", "vital", "robust", "seamless", "comprehensive", "leverage", "delve", "tapestry", "landscape", "foster", "underscore", "showcase", "testament", "groundbreaking", "vibrant", "embark". Use plainer words, or repeat a precise word rather than rotating synonyms.
+- **Inflated vocabulary.** "crucial", "pivotal", "vital", "robust", "seamless", "comprehensive", "leverage", "delve", "tapestry", "landscape", "foster", "underscore", "showcase", "testament", "groundbreaking", "vibrant", "embark". Use plainer words of the same strength, or repeat a precise word rather than rotating synonyms. For example, "crucial" becomes "essential" or "key", and "cornerstone" becomes "foundation". Replacing a word with a plainer word of the same strength is not weakening the claim.
 - **Repeated adjectives and adverbs.** Keep one good word and drop the rest.
 - **Uniform rhythm.** Sentences of the same length and paragraphs of the same size. Vary them naturally, following the content.
 - **Over-explanation.** Explanations of things the reader already knows, and recaps of what was just said.
@@ -104,7 +104,7 @@ Never make a formal text informal. Never make an informal text stiff.
 Confirm all of these. If one fails, fix it:
 
 1. Every fact, number, name, date, and term from the input is present and unchanged.
-2. Every claim is present. None were added.
+2. Every claim from your claim list is present in the rewrite, including claims that appear only in a conclusion or closing sentence. None were added.
 3. The language and regional spelling match the input.
 4. The tone matches the register in step 4.
 5. The rewrite contains no em-dash habit, filler opener, or canned transition that the input did not need.
