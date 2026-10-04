@@ -52,7 +52,9 @@ The skill only runs when you type `/human`. The assistant does not invoke it on 
 - **Rhythm:** varies sentence and paragraph length in line with the content.
 - **Register:** keeps the tone the text already has. A casual message stays casual, a formal email stays formal, and an already-natural text gets small edits.
 
-It keeps the source language and regional spelling, and does not translate unless asked.
+It keeps the source language and regional spelling. It translates only when you ask for a translation, for example `/human translate to Romanian: <text>`.
+
+Supported with specific notes: English, Spanish, French and Romanian. Other languages get the general rules only.
 
 See [`examples/before-after.md`](examples/before-after.md) for real before and after outputs in English and Spanish.
 
@@ -66,7 +68,7 @@ See [`examples/before-after.md`](examples/before-after.md) for real before and a
 ## Limitations
 
 - Output depends on the underlying model and changes from run to run. The recorded examples show one run.
-- Tested on English and Spanish only. Other languages may work, but they are not covered by the tests.
+- Tested on English, Spanish, French and Romanian. Other languages may work, but they are not covered by the tests. The French and Romanian notes have not been reviewed by a native speaker.
 - It cannot learn your personal voice from a few sentences. Each rewrite follows the register of the text you give it.
 - It can remove a hedge or a qualifier that you meant. Check the rewrite where precision matters, such as legal, medical, or financial text.
 - It does not know your audience unless the text tells it.
@@ -76,11 +78,11 @@ See [`examples/before-after.md`](examples/before-after.md) for real before and a
 The tests check the behavior that matters: keeping the facts and the language, and removing the patterns. They do not measure how natural the text sounds, because that needs a human reader.
 
 ```bash
-python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 5/5 pass
+python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 10/10 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 ```
 
-- `tests/inputs/` holds five representative texts: a generic AI-style English paragraph, a formal Spanish email, a casual English message, a text that is already natural, and a long-form English essay.
+- `tests/inputs/` holds ten representative texts: a generic AI-style English paragraph, a formal Spanish email, a casual English message, a text that is already natural, a long-form English essay, a generic AI-style French paragraph, a generic AI-style Romanian paragraph, a formal French email, a formal Romanian email, and an English to Romanian translation request.
 - `tests/recorded/` holds the outputs of `/human` on those inputs.
 - `tests/expectations.json` lists the facts that must survive each rewrite (names, figures, dates, terms), and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
@@ -93,7 +95,7 @@ The checker is a phrase and fact check. It does not judge quality, and a passing
 skills/human/SKILL.md     the skill (the only file the assistant needs)
 examples/before-after.md  before and after outputs
 tests/                    inputs, recorded outputs, expectations, checker
-README.md, LICENSE, .gitignore
+README.md, CHANGELOG.md, LICENSE, .gitignore
 ```
 
 ## Dedication
