@@ -21,6 +21,26 @@ Start a new session after installing, so the skill is picked up.
 
 The skill is installed as a standalone skill rather than as a plugin on purpose. Plugin skills are namespaced, so a plugin would be invoked as `/human-touch:human`, not `/human`.
 
+## Auto-update
+
+Once installed, `/human` keeps itself current without you having to remember `git pull` or check the releases page.
+
+**How it works:** a Claude Code skill is a file read at the moment you type `/human` — there is no background process for it between invocations. So the check happens as part of using `/human` itself: the first thing `/human` does is run `scripts/check_update.py`, which compares your installed version (`skills/human/VERSION`) against [the latest GitHub release](https://github.com/obywans/human-touch/releases/latest). To avoid hitting GitHub on every single use, it caches the result in `~/.cache/human-touch/update-state.json` and only checks again after about 20 hours.
+
+If a newer version exists, the rewrite is delivered exactly as normal, and only afterward — never before, never in the middle — does `/human` add one line telling you the current and latest version, and separately run `scripts/apply_update.py` to try to update for next time. Running the update strictly after the reply is the point: it only ever changes what the *next* `/human` call reads, never the one that just answered you.
+
+**What "update" means here:** only the files in `skills/human/` (mainly `SKILL.md` and `VERSION`) are replaced with the new release's versions. Nothing downloaded is ever executed as code — a copy-mode update downloads a release source archive from GitHub and copies specific files out of it; a git-mode update runs a fast-forward-only `git pull`-equivalent, which git itself refuses if your copy has local changes or has diverged.
+
+**Safety, in order:**
+- Every request goes to the fixed, hardcoded `github.com/obywans/human-touch` API endpoint — never a URL from a file, argument, or anything downloaded.
+- If you installed via `git clone`/`ln -s`, it checks `git remote get-url origin` actually points at the official repo before touching anything. A fork is left alone, with instructions to update it yourself.
+- If you installed via a plain copy (`cp -R`), it still works: version detection and the update itself use the files on disk, not git.
+- Any uncommitted local edits to a git install stop the update — it will not overwrite your changes.
+- Any problem at all (offline, GitHub down, a malformed response, a permission error, a fork, local edits) leaves every file exactly as it was and is reported as "could not update, here's why, and here's the manual command" — never a silent failure, never a partial write. `/human` itself is unaffected either way; the rewrite above still happened.
+- `python3 scripts/apply_update.py --dry-run` shows what would happen without changing anything.
+
+To turn off the automatic apply step and only ever get the one-line notice, delete or don't run `scripts/apply_update.py` yourself — the check in step 0 never applies anything on its own.
+
 ## Usage
 
 Type `/human` followed by the text:
@@ -86,6 +106,7 @@ The tests check the behavior that matters: keeping the facts and the language, a
 python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/16 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
+python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
 ```
 
 - `tests/inputs/` holds sixteen representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian.
@@ -93,17 +114,20 @@ python3 tests/style_report.py                   # coarse report on sentence rhyt
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
 - `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
+- `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
 ## Repository layout
 
 ```text
-skills/human/SKILL.md     the skill (the only file the assistant needs)
-docs/always-on.md         instructions block to apply the same rules every reply, in a session or project
-examples/before-after.md  before and after outputs
-examples/evaluation.md    nine cases with what should and must not change
-tests/                    inputs, recorded outputs, expectations, checker, style report
+skills/human/SKILL.md             the skill (the only file the assistant needs to follow /human)
+skills/human/VERSION              the installed version number, read by the update scripts
+skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py
+docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
+examples/before-after.md          before and after outputs
+examples/evaluation.md            nine cases with what should and must not change
+tests/                            inputs, recorded outputs, expectations, checker, style report, update tests
 README.md, CHANGELOG.md, LICENSE, .gitignore
 ```
 

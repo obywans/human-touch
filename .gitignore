@@ -8,3 +8,7 @@
 # Python (tests/check_outputs.py)
 __pycache__/
 *.pyc
+
+# apply_update.py writes here before an atomic os.replace(); should never
+# survive, but ignore it in case a crash leaves one behind during testing
+*.update-tmp
