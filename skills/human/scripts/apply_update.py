@@ -101,7 +101,20 @@ def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bo
         safe_root = os.path.realpath(extract_dir)
         remaining_budget = [MAX_TOTAL_BYTES]
         with tarfile.open(archive_path, "r:gz") as tf:
-            for member in tf.getmembers():
+            # Iterate the TarFile directly (lazy, one header at a time) and
+            # NEVER call tf.getmembers(): that method pre-loads every member
+            # by scanning the whole archive first, which for a non-seekable
+            # gzip stream means decompressing straight through any earlier
+            # member's declared content to reach the next header. A member
+            # that declares gigabytes of size would then be fully decompressed
+            # just to list it, before this loop ever got a chance to reject
+            # it on size -- a second, separate decompression-bomb gap from
+            # the one fixed in 1.2.1 (that one capped bytes written during
+            # extraction; this one is about bytes read merely to enumerate
+            # members). Reproduced and timed: a lazily-rejected 300 MB-declared
+            # member takes ~0ms here, versus tf.getmembers() needing to
+            # decompress through it first.
+            for member in tf:
                 # Extract each member by hand instead of extractall(): only
                 # ever write plain regular files, never a symlink, hardlink,
                 # device, or fifo, and never outside safe_root. This is
@@ -112,10 +125,11 @@ def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bo
                 member_path = os.path.realpath(os.path.join(extract_dir, member.name))
                 if not (member_path == safe_root or member_path.startswith(safe_root + os.sep)):
                     raise ValueError(f"unsafe path in archive: {member.name!r}")
-                # Cheap first check against the header's declared size (a
-                # decompression bomb would normally lie here too, but it
-                # costs nothing to check); the real limit is enforced below
-                # on actual bytes read, which does not trust the header.
+                # Check the header's declared size and abort immediately if
+                # it's over the cap, BEFORE asking tarfile for the next
+                # member -- that's what keeps this lazy. The real limit is
+                # still enforced on actual bytes read below too, which does
+                # not trust the header either.
                 if member.size > MAX_MEMBER_BYTES:
                     raise ValueError(f"archive member {member.name!r} declares {member.size} bytes, over the cap")
                 os.makedirs(os.path.dirname(member_path), exist_ok=True)

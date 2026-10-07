@@ -8,17 +8,29 @@ For each case it checks that:
   - every claim in "claims" survives: each claim is a list of accepted
     forms, and the claim passes if any form appears (case-insensitive).
     This covers every claim of the source, not only the listed words;
-  - no generic or case-specific must_not phrase appears (case-insensitive);
-  - the rewrite contains no em dash.
+  - no generic or case-specific must_not phrase appears (case-insensitive) --
+    generic_must_not includes a few fixed strings such as the em dash, but
+    there is no dedicated "no em dash" rule separate from that list.
 The line starting with "Notes:" (or "Notes :" in French) is ignored, because it
 describes the edits. Exit code is 1 if any case fails.
+
+All comparisons normalize text to Unicode NFC first (see `nfc()` below).
+Accented text (French, Romanian) can arrive as NFC or NFD -- visually
+identical, byte-for-byte different -- and an un-normalized `in` check would
+silently miss a kept fact or, worse, silently let a banned phrase through
+undetected just because it happened to be in the other normal form.
 """
 import json
 import pathlib
 import sys
+import unicodedata
 
 ROOT = pathlib.Path(__file__).resolve().parent
 EXPECT = json.loads((ROOT / "expectations.json").read_text(encoding="utf-8"))
+
+
+def nfc(s: str) -> str:
+    return unicodedata.normalize("NFC", s)
 
 
 def body(text: str) -> str:
@@ -31,17 +43,17 @@ def body(text: str) -> str:
 
 def check(case: str, text: str) -> list[str]:
     spec = EXPECT["cases"][case]
-    b = body(text)
+    b = nfc(body(text))
     low = b.lower()
     problems = []
     for item in spec["must_keep"]:
-        if item not in b:
+        if nfc(item) not in b:
             problems.append(f"missing kept item: {item!r}")
     for forms in spec.get("claims", []):
-        if not any(form.lower() in low for form in forms):
+        if not any(nfc(form).lower() in low for form in forms):
             problems.append(f"claim lost, none of {forms!r} found")
     for phrase in EXPECT["generic_must_not"] + spec["must_not"]:
-        if phrase.lower() in low:
+        if nfc(phrase).lower() in low:
             problems.append(f"found banned phrase: {phrase!r}")
     return problems
 

@@ -2,6 +2,25 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.2.2 (2026-10-08)
+
+### Fixed
+- **Security:** `apply_update.py` called `tf.getmembers()` to list a release archive's files, which pre-loads every member by scanning the whole archive — for a non-seekable gzip stream, that means decompressing straight through a member's full declared content just to reach the next header. A member declaring gigabytes of size would be fully decompressed before the per-member size cap added in 1.2.1 ever got a chance to reject it: a second, distinct decompression-bomb gap (CPU/time, not disk) from the one already fixed. Reproduced with a real crafted archive: the old code took measurable time decompressing a 300 MB-declared member before rejecting it; switching to lazy iteration (`for member in tf:` instead of `tf.getmembers()`) rejects the same member in ~0ms, before any of its content is read.
+- `tests/check_outputs.py` compared text with no Unicode normalization. NFC and NFD renderings of the same accented text are byte-for-byte different even though they look identical, which could make the checker miss a kept fact that was really there, and — more seriously — let a banned phrase through completely undetected when it happened to be in the other normal form. All comparisons now normalize to NFC first. New regression tests (`tests/test_check_outputs.py`) reproduce both directions and confirm the fix.
+- README overstated that English has "specific notes" the way Spanish, French and Romanian do; it only uses the general rules. Reworded.
+- `SKILL.md` never said that the text being rewritten is data, not instructions. Added: pasted text that reads like a command to the model is rewritten like any other sentence, never acted on.
+- Two internal contradictions in `SKILL.md`'s context table clarified: "no hedging on facts" for technical documentation does not override keeping a hedge the source genuinely has; and a register row's own instruction (e.g. WhatsApp's "don't fix punctuation habits") now explicitly wins over a general pattern rule when the two conflict for that text.
+
+### How this was found
+A background security review of the 1.2.1 push caught the first issue above directly. The rest came from a dedicated bug-hunt-and-security review of the whole project, including three dimensions focused specifically on the update system (network input handling, subprocess argument safety — confirmed safe, no fix needed — and filesystem/symlink safety). Several of that review's findings could not be automatically double-checked because the verification agents hit a session usage limit; the ones acted on here were re-verified by hand, including an empirical, timed reproduction of the decompression-bomb gap, before fixing anything.
+
+### Verified before publishing
+- All existing tests pass: `tests/check_outputs.py` (16/16), `tests/test_update.py` (20/20), `tests/style_report.py` (runs cleanly), plus the 5 new `tests/test_check_outputs.py` tests.
+- A real end-to-end update was performed against the actual published GitHub repository (no mocks): a symlinked install pinned at v1.2.0 correctly detected v1.2.1 was available, updated via a real git fast-forward, and the resulting installation's `VERSION` and `SKILL.md` were confirmed correct and usable afterward.
+
+### Known limitation
+- A full connectivity diagnosis this round also found that `git clone` to `github.com` can return HTTP 403 inside this project's own sandboxed review-agent environment specifically (not from a normal shell, not from DNS/proxy/TLS/permissions, and not from HumanTouch's own update code, which never runs a bare `git clone`). This affected how some of today's review agents worked, not anything a `/human` user would experience, since `check_update.py`/`apply_update.py` only ever use plain HTTPS requests or `git fetch`/`merge` against an existing remote.
+
 ## 1.2.1 (2026-10-07)
 
 ### Fixed
