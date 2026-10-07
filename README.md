@@ -77,7 +77,7 @@ To have the assistant apply the same rules automatically, in every reply of a se
 
 It keeps the source language and regional spelling. It translates only when you ask for a translation, for example `/human translate to Romanian: <text>`.
 
-Supported with specific notes: English, Spanish, French and Romanian. Other languages get the general rules only.
+Supported: English, Spanish, French and Romanian (Spanish, French and Romanian each have their own extra language-specific notes; English uses the general rules directly). Other languages get the general rules only.
 
 See [`examples/before-after.md`](examples/before-after.md) for five before/after outputs, and [`examples/evaluation.md`](examples/evaluation.md) for nine more that cover chat, social, technical, business and personal writing across four languages, each with what should change and what must not.
 
