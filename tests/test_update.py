@@ -297,6 +297,41 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
         with open(os.path.join(skill_dir, "SKILL.md"), "rb") as f:
             self.assertEqual(f.read(), normal)
 
+    # A real bug found by review: os.replace() on a path that is itself a
+    # symlink unlinks the symlink rather than writing through to its
+    # target. Confirmed real (reproduced against os.replace directly,
+    # outside this suite) and fixed: copy-mode now refuses outright,
+    # leaving the symlink and its target both untouched.
+    def test_copy_mode_refuses_when_destination_is_a_symlink(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        real_elsewhere = tempfile.mkdtemp(prefix="ht-test-elsewhere-")
+        self.addCleanup(shutil.rmtree, real_elsewhere, ignore_errors=True)
+        real_skill_md = os.path.join(real_elsewhere, "SKILL.md")
+        with open(real_skill_md, "w", encoding="utf-8") as f:
+            f.write("original, symlinked-to content\n")
+
+        skill_md_path = os.path.join(skill_dir, "SKILL.md")
+        os.symlink(real_skill_md, skill_md_path)
+        self.assertTrue(os.path.islink(skill_md_path))
+
+        normal = b"---\nname: human\n---\n# HumanTouch\nNew release content.\n"
+        tarball_bytes = self._make_fake_release_tarball(normal, version_bytes=b"1.2.0\n")
+
+        with self._fake_urlopen_returning(tarball_bytes):
+            rc, out = self.run_apply(
+                skill_dir, self.make_cache_dir(),
+                lambda **_: fake_release("v1.2.0", tarball_url="https://codeload.github.com/t.tar.gz"),
+                mode_override="copy",
+            )
+        self.assertEqual(rc, 1)
+        self.assertIn("NOT_UPDATED", out)
+        self.assertIn("symlink", out)
+        # The symlink must still be a symlink, and its target must still
+        # hold the original content -- nothing replaced, nothing stale.
+        self.assertTrue(os.path.islink(skill_md_path))
+        with open(real_skill_md, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "original, symlinked-to content\n")
+
     # Scenario 8: recovery after a failed update
     def test_recovery_after_failed_update(self):
         skill_dir = self.make_skill_dir("1.0.0")
