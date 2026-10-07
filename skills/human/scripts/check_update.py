@@ -46,7 +46,7 @@ def main(argv: list[str]) -> int:
         release = lib.fetch_latest_release()
     except Exception as exc:  # noqa: BLE001 - deliberate: never propagate
         state["last_checked_epoch"] = time.time()
-        state["last_result"] = f"error: {exc}"
+        state["last_result"] = f"error: {lib.describe_fetch_error(exc)}"
         lib.save_state(state)
         return 0  # offline / GitHub down / bad response: say nothing, move on
 

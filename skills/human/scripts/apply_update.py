@@ -210,7 +210,7 @@ def main(argv: list[str]) -> int:
     try:
         release = lib.fetch_latest_release()
     except Exception as exc:  # noqa: BLE001
-        report(f"could not reach GitHub ({exc})", installed, None)
+        report(lib.describe_fetch_error(exc), installed, None)
         return 1
 
     if not lib.is_newer(release["tag"], installed):

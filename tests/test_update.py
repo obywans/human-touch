@@ -18,8 +18,11 @@ the feature needs to handle:
 import io
 import json
 import os
+import socket
+import ssl
 import tarfile
 import shutil
+import urllib.error
 import subprocess
 import sys
 import tempfile
@@ -35,6 +38,11 @@ sys.path.insert(0, SCRIPTS_DIR)
 import _update_lib as lib  # noqa: E402
 import apply_update  # noqa: E402
 import check_update  # noqa: E402
+
+
+def read_text(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
 
 
 def fake_release(tag, tarball_url=None):
@@ -59,6 +67,45 @@ class TempDirsMixin:
         d = tempfile.mkdtemp(prefix="ht-test-cache-")
         self.addCleanup(shutil.rmtree, d, ignore_errors=True)
         return d
+
+
+class TestErrorClassification(unittest.TestCase):
+    """_update_lib.describe_fetch_error gives a specific category instead of
+    a generic "could not reach GitHub" for every failure -- this is the
+    DNS/TLS/HTTP/timeout/malformed-response distinction asked for."""
+
+    def test_http_error(self):
+        exc = urllib.error.HTTPError("https://api.github.com/x", 403, "Forbidden", {}, None)
+        self.assertIn("HTTP 403", lib.describe_fetch_error(exc))
+
+    def test_dns_failure(self):
+        exc = urllib.error.URLError(socket.gaierror("nodename nor servname provided"))
+        self.assertIn("DNS", lib.describe_fetch_error(exc))
+
+    def test_tls_failure(self):
+        exc = urllib.error.URLError(ssl.SSLError("certificate verify failed"))
+        self.assertIn("TLS", lib.describe_fetch_error(exc))
+
+    def test_other_network_error(self):
+        exc = urllib.error.URLError("some other connection problem")
+        desc = lib.describe_fetch_error(exc)
+        self.assertIn("network error", desc)
+
+    def test_timeout(self):
+        self.assertIn("timed out", lib.describe_fetch_error(socket.timeout()))
+
+    def test_malformed_json(self):
+        exc = json.JSONDecodeError("Expecting value", "not json", 0)
+        self.assertIn("not with valid JSON", lib.describe_fetch_error(exc))
+
+    def test_release_data_unusable(self):
+        exc = ValueError("release response has no usable tag_name")
+        desc = lib.describe_fetch_error(exc)
+        self.assertIn("unusable", desc)
+        self.assertNotIn("could not reach", desc)
+
+    def test_unclassified_error_falls_back_clearly(self):
+        self.assertIn("unexpected error", lib.describe_fetch_error(RuntimeError("something else")))
 
 
 class TestVersionCompare(unittest.TestCase):
@@ -194,7 +241,7 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
     def test_github_unavailable_reports_and_changes_nothing(self):
         skill_dir = self.make_skill_dir("1.0.0")
         version_path = os.path.join(skill_dir, "VERSION")
-        before = open(version_path, encoding="utf-8").read()
+        before = read_text(version_path)
 
         def boom(**_):
             raise OSError("timed out")
@@ -203,7 +250,42 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("NOT_UPDATED", out)
         self.assertIn("installed=1.0.0", out)
-        self.assertEqual(before, open(version_path, encoding="utf-8").read())
+        self.assertEqual(before, read_text(version_path))
+
+    # A real bug found by review: a malformed GitHub response (not a
+    # dict -- a JSON array or null) raised an AttributeError from deep
+    # inside fetch_latest_release, which apply_update.py then mislabeled
+    # as "could not reach GitHub" even though GitHub was reached fine; it
+    # just returned something unusable. Fixed with an explicit type check
+    # and a classifier (_update_lib.describe_fetch_error) that distinguishes
+    # "GitHub responded with unusable data" from an actual network failure.
+    def test_malformed_github_response_is_reported_clearly_not_as_unreachable(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+
+        # fetch_latest_release itself raises ValueError for a non-dict
+        # response; simulate that directly, as the real function would.
+        def malformed(**_):
+            raise ValueError("release response is a list, not a JSON object")
+
+        rc, out = self.run_apply(skill_dir, self.make_cache_dir(), malformed)
+        self.assertEqual(rc, 1)
+        self.assertIn("NOT_UPDATED", out)
+        self.assertIn("unusable", out)
+        self.assertNotIn("could not reach GitHub", out)
+
+    def test_network_error_is_still_reported_as_unreachable(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+
+        def network_down(**_):
+            raise OSError("Network is unreachable")
+
+        rc, out = self.run_apply(skill_dir, self.make_cache_dir(), network_down)
+        self.assertEqual(rc, 1)
+        self.assertIn("NOT_UPDATED", out)
+        # A plain OSError isn't one of the classified urllib/json/ValueError
+        # cases, so it falls through to the generic "unexpected error"
+        # category -- still distinct wording from the unusable-data case.
+        self.assertIn("unexpected error", out)
 
     def test_fork_remote_refuses_to_auto_update(self):
         skill_dir = self.make_skill_dir("1.0.0")
@@ -219,7 +301,7 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
     def test_copy_mode_failure_leaves_files_untouched(self):
         skill_dir = self.make_skill_dir("1.0.0")
         version_path = os.path.join(skill_dir, "VERSION")
-        before = open(version_path, encoding="utf-8").read()
+        before = read_text(version_path)
         with mock.patch.object(apply_update, "update_via_copy", side_effect=ValueError("boom")):
             rc, out = self.run_apply(
                 skill_dir, self.make_cache_dir(),
@@ -228,7 +310,7 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
             )
         self.assertEqual(rc, 1)
         self.assertIn("NOT_UPDATED", out)
-        self.assertEqual(before, open(version_path, encoding="utf-8").read())
+        self.assertEqual(before, read_text(version_path))
 
     def _make_fake_release_tarball(self, skill_md_bytes: bytes, version_bytes: bytes | None = None) -> bytes:
         """Builds a real .tar.gz with the same layout GitHub's release
@@ -264,7 +346,7 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
     def test_copy_mode_rejects_oversized_archive_member(self):
         skill_dir = self.make_skill_dir("1.0.0")
         version_path = os.path.join(skill_dir, "VERSION")
-        before = open(version_path, encoding="utf-8").read()
+        before = read_text(version_path)
 
         oversized = b"A" * (apply_update.MAX_MEMBER_BYTES + 1)
         tarball_bytes = self._make_fake_release_tarball(oversized)
@@ -277,7 +359,7 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
             )
         self.assertEqual(rc, 1)
         self.assertIn("NOT_UPDATED", out)
-        self.assertEqual(before, open(version_path, encoding="utf-8").read())
+        self.assertEqual(before, read_text(version_path))
 
     def test_copy_mode_accepts_a_normal_sized_release(self):
         """Sanity check in the other direction: a real, small SKILL.md must

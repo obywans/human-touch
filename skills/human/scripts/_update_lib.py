@@ -12,8 +12,11 @@ tarball's files are extracted and copied, never executed.
 import json
 import os
 import re
+import socket
+import ssl
 import subprocess
 import time
+import urllib.error
 import urllib.request
 
 OWNER = "obywans"
@@ -77,6 +80,8 @@ def fetch_latest_release(
             raise ValueError(f"unexpected redirect host: {host!r}")
         raw = resp.read(1_000_000)  # cap: refuse to buffer an unbounded response
     data = json.loads(raw.decode("utf-8", errors="replace"))
+    if not isinstance(data, dict):
+        raise ValueError(f"release response is a {type(data).__name__}, not a JSON object")
     tag = data.get("tag_name")
     if not tag or not isinstance(tag, str):
         raise ValueError("release response has no usable tag_name")
@@ -86,6 +91,32 @@ def fetch_latest_release(
         "html_url": data.get("html_url") or f"https://github.com/{OWNER}/{REPO}/releases/tag/{tag}",
         "tarball_url": data.get("tarball_url"),
     }
+
+
+def describe_fetch_error(exc: Exception) -> str:
+    """Turns an exception from fetch_latest_release (or a download in
+    apply_update.py) into a short, specific category instead of a generic
+    "could not reach GitHub" for every failure. DNS, TLS, an HTTP error
+    status, a timeout, and GitHub responding with something unusable are
+    genuinely different situations and deserve different wording."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return f"GitHub returned HTTP {exc.code}"
+    if isinstance(exc, urllib.error.URLError):
+        reason = exc.reason
+        if isinstance(reason, socket.gaierror):
+            return "DNS lookup failed"
+        if isinstance(reason, ssl.SSLError):
+            return f"TLS error ({reason})"
+        if isinstance(reason, socket.timeout):
+            return "connection timed out"
+        return f"network error ({reason})"
+    if isinstance(exc, (socket.timeout, TimeoutError)):
+        return "timed out"
+    if isinstance(exc, json.JSONDecodeError):
+        return "GitHub responded, but not with valid JSON"
+    if isinstance(exc, ValueError):
+        return f"GitHub responded, but the release data was unusable: {exc}"
+    return f"unexpected error: {exc}"
 
 
 def cache_dir() -> str:
