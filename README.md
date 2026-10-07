@@ -41,6 +41,8 @@ Ask for an explanation of the changes by adding it to the request, for example `
 
 The skill only runs when you type `/human`. The assistant does not invoke it on its own.
 
+To have the assistant apply the same rules automatically, in every reply of a session or a project, see [`docs/always-on.md`](docs/always-on.md). That is a block of instructions you add yourself to the project's instructions file; it is not a different mode of the skill.
+
 ## What the skill changes
 
 - **Punctuation:** replaces em dashes and stacked punctuation where a comma, period, colon, or parenthesis reads better. It keeps dashes that are part of the author's style or that mark ranges.
@@ -50,13 +52,14 @@ The skill only runs when you type `/human`. The assistant does not invoke it on 
 - **Structure:** removes headings, bullets, and bold from short text where a paragraph works better.
 - **Vocabulary:** replaces inflated words ("crucial", "pivotal", "robust", "seamless", "leverage", "delve") with plainer ones, and removes repeated adjectives and adverbs.
 - **Rhythm:** varies sentence and paragraph length in line with the content.
-- **Register:** keeps the tone the text already has. A casual message stays casual, a formal email stays formal, and an already-natural text gets small edits.
+- **Register:** adapts to context instead of using one style for everything. A WhatsApp message, an email, a business proposal, technical documentation, a social post, personal writing and a long-form article each get different treatment; see the context table in `skills/human/SKILL.md`.
+- **Voice:** keeps the author's person, sentence habits and any phrase that is clearly theirs, instead of replacing it with one generic "human" voice.
 
 It keeps the source language and regional spelling. It translates only when you ask for a translation, for example `/human translate to Romanian: <text>`.
 
 Supported with specific notes: English, Spanish, French and Romanian. Other languages get the general rules only.
 
-See [`examples/before-after.md`](examples/before-after.md) for real before and after outputs in English and Spanish.
+See [`examples/before-after.md`](examples/before-after.md) for five before/after outputs, and [`examples/evaluation.md`](examples/evaluation.md) for nine more that cover chat, social, technical, business and personal writing across four languages, each with what should change and what must not.
 
 ## What it does NOT guarantee
 
@@ -72,29 +75,35 @@ See [`examples/before-after.md`](examples/before-after.md) for real before and a
 - It cannot learn your personal voice from a few sentences. Each rewrite follows the register of the text you give it.
 - It can remove a hedge or a qualifier that you meant. Check the rewrite where precision matters, such as legal, medical, or financial text.
 - It does not know your audience unless the text tells it.
+- It can make a text's rhythm more uniform, not less, in some runs. `tests/style_report.py` on the recorded 1.1.0 outputs shows a few cases where sentence-length variety went down after rewriting, which is the opposite of the "allow short, medium and long sentences" rule. This is a known limitation, not something the checker catches.
+- The "always on" instructions in `docs/always-on.md` are guidance the assistant follows, not a guarantee. Check important texts before you send them, the same as with `/human` itself.
 
 ## Tests
 
 The tests check the behavior that matters: keeping the facts and the language, and removing the patterns. They do not measure how natural the text sounds, because that needs a human reader.
 
 ```bash
-python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 10/10 pass
+python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/16 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
+python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
 ```
 
-- `tests/inputs/` holds ten representative texts: a generic AI-style English paragraph, a formal Spanish email, a casual English message, a text that is already natural, a long-form English essay, a generic AI-style French paragraph, a generic AI-style Romanian paragraph, a formal French email, a formal Romanian email, and an English to Romanian translation request.
-- `tests/recorded/` holds the outputs of `/human` on those inputs.
-- `tests/expectations.json` lists the facts that must survive each rewrite (names, figures, dates, terms), and the phrases that must not appear.
+- `tests/inputs/` holds sixteen representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian.
+- `tests/recorded/` holds the outputs of `/human` on those inputs, one run per case with the current skill.
+- `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
+- `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
 
-The checker is a phrase and fact check. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
+The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
 ## Repository layout
 
 ```text
 skills/human/SKILL.md     the skill (the only file the assistant needs)
+docs/always-on.md         instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md  before and after outputs
-tests/                    inputs, recorded outputs, expectations, checker
+examples/evaluation.md    nine cases with what should and must not change
+tests/                    inputs, recorded outputs, expectations, checker, style report
 README.md, CHANGELOG.md, LICENSE, .gitignore
 ```
 
