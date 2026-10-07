@@ -2,6 +2,18 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.3.0 (2026-10-08)
+
+### Added
+- A Wikipedia change notice. HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once by hand, never kept in sync automatically. The existing update check (`check_update.py`), using the same cache file and the same ~20-hour throttle, now also compares that page's current revision id (not its content) against the last one seen. If it changed, `/human` adds one line after the rewrite: a notice with the page's URL. Nothing is read from the page, nothing in `SKILL.md` changes on its own — a person reviews the change, tests anything worth incorporating against the existing cases, and publishes it as a new version, the same as every other change to `SKILL.md` so far. See the "Auto-update" section of README.md.
+- `_update_lib.fetch_wikipedia_revision()` and `describe_fetch_error`-style fail-safe handling: offline, Wikipedia down, or a malformed response just means no notice that time; `/human` is unaffected either way.
+- `_update_lib.should_check()` now takes a `key` parameter, so the Wikipedia check and the GitHub release check run on independent clocks within the same state file, instead of resetting each other.
+
+### Verified before publishing
+- 36 tests in `tests/test_update.py` (up from 31), covering: first check records the revision with no notice, an unchanged revision stays silent, a changed revision prints the notice, Wikipedia being unreachable is silent and safe, and the Wikipedia check never affects the GitHub update notice.
+- A real end-to-end run against the live Wikipedia and GitHub APIs: first run recorded the real current revision id with no notice; forcing past the throttle with the same id stayed silent; simulating an old cached id produced the correct notice with the correct URL.
+- Full suite: `tests/check_outputs.py` (16/16), `tests/test_check_outputs.py` (5/5), `tests/test_style_report.py` (2/2).
+
 ## 1.2.4 (2026-10-08)
 
 ### Fixed

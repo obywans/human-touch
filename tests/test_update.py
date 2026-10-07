@@ -207,6 +207,84 @@ class TestCheckUpdate(TempDirsMixin, unittest.TestCase):
         self.assertEqual(out, "")
 
 
+class TestWikipediaNoticeCheck(TempDirsMixin, unittest.TestCase):
+    """The Wikipedia check is notice-only: it compares a revision id, never
+    reads the page's content, and never touches SKILL.md. It reuses the
+    same cache file and the same throttle mechanism as the GitHub check,
+    under its own key so the two don't reset each other's clock."""
+
+    def run_check(self, skill_dir, cache_dir, wiki_side_effect, github_side_effect=None):
+        github_side_effect = github_side_effect or (lambda **_: fake_release("v1.0.0"))
+        script_path = os.path.join(skill_dir, "scripts", "check_update.py")
+        with mock.patch.object(lib, "fetch_latest_release", side_effect=github_side_effect), \
+             mock.patch.object(lib, "fetch_wikipedia_revision", side_effect=wiki_side_effect), \
+             mock.patch.object(check_update, "__file__", script_path), \
+             mock.patch.dict(os.environ, {"HUMAN_TOUCH_CACHE_DIR": cache_dir}):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = check_update.main(["--quiet"])
+        return rc, buf.getvalue()
+
+    def test_first_check_records_revision_without_a_notice(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        rc, out = self.run_check(skill_dir, self.make_cache_dir(), lambda **_: {"revid": 111, "timestamp": "t"})
+        self.assertEqual(rc, 0)
+        self.assertNotIn("WIKIPEDIA_CHANGED", out)
+
+    def test_unchanged_revision_on_second_check_is_silent(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        cache_dir = self.make_cache_dir()
+        self.run_check(skill_dir, cache_dir, lambda **_: {"revid": 111, "timestamp": "t"})
+        # Force past the throttle window so the second check actually hits
+        # the (mocked) network again instead of reusing the cache.
+        state_path = os.path.join(cache_dir, "update-state.json")
+        with open(state_path, encoding="utf-8") as f:
+            state = json.load(f)
+        state["wiki_last_checked_epoch"] = 0
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(state, f)
+
+        rc, out = self.run_check(skill_dir, cache_dir, lambda **_: {"revid": 111, "timestamp": "t2"})
+        self.assertEqual(rc, 0)
+        self.assertNotIn("WIKIPEDIA_CHANGED", out)
+
+    def test_changed_revision_prints_a_notice(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        cache_dir = self.make_cache_dir()
+        self.run_check(skill_dir, cache_dir, lambda **_: {"revid": 111, "timestamp": "t"})
+        state_path = os.path.join(cache_dir, "update-state.json")
+        with open(state_path, encoding="utf-8") as f:
+            state = json.load(f)
+        state["wiki_last_checked_epoch"] = 0
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(state, f)
+
+        rc, out = self.run_check(skill_dir, cache_dir, lambda **_: {"revid": 222, "timestamp": "t2"})
+        self.assertEqual(rc, 0)
+        self.assertIn("WIKIPEDIA_CHANGED", out)
+        self.assertIn("Signs_of_AI_writing", out)
+
+    def test_wikipedia_unavailable_is_silent_and_safe(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+
+        def boom(**_):
+            raise OSError("Wikipedia is down")
+
+        rc, out = self.run_check(skill_dir, self.make_cache_dir(), boom)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("WIKIPEDIA_CHANGED", out)
+
+    def test_wikipedia_check_does_not_affect_github_update_notice(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        rc, out = self.run_check(
+            skill_dir, self.make_cache_dir(),
+            wiki_side_effect=lambda **_: {"revid": 111, "timestamp": "t"},
+            github_side_effect=lambda **_: fake_release("v1.2.0"),
+        )
+        self.assertEqual(rc, 0)
+        self.assertIn("UPDATE_AVAILABLE", out)
+
+
 class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
     def run_apply(self, skill_dir, cache_dir, fetch_side_effect, args=None, mode_override=None):
         args = args or []

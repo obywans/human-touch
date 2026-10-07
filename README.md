@@ -41,6 +41,8 @@ If a newer version exists, the rewrite is delivered exactly as normal, and only 
 
 To turn off the automatic apply step and only ever get the one-line notice, delete or don't run `scripts/apply_update.py` yourself — the check in step 0 never applies anything on its own.
 
+**Wikipedia notice.** HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once, by hand, not kept in sync automatically. The same `check_update.py` run, using the same cache file and the same ~20-hour throttle, also asks Wikipedia's API for that page's current revision id — not its content — and compares it to the last one seen. If it changed, `/human` adds one line: `Note: the source Wikipedia page for AI-writing patterns changed — <url>. This does not change anything automatically.` That is the whole effect: a notice. Nothing is read from the page, nothing in `SKILL.md` changes on its own, and a person (currently: the maintainer) decides whether to look at the change, test anything worth incorporating against the existing cases, and publish it as a new version — the same process every change to `SKILL.md` has gone through so far. Same fail-safe behavior as the code-update check: offline, Wikipedia down, or a malformed response just means no notice that time, and `/human` is unaffected either way.
+
 ## Usage
 
 Type `/human` followed by the text:

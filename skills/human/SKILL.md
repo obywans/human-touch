@@ -23,6 +23,8 @@ Give it a few seconds at most. This never fails loudly and never changes anythin
 
 If it prints a line starting with `UPDATE_AVAILABLE`, remember it, but do not mention it yet.
 
+If it prints a line starting with `WIKIPEDIA_CHANGED`, remember it too. This only means the source Wikipedia page these patterns were informed by has changed since it was last checked — it is not a code update, and nothing about $ARGUMENTS or the rewrite changes because of it.
+
 ## 1. Read the input
 
 - If $ARGUMENTS is empty, ask the user for the text and stop.
@@ -156,6 +158,8 @@ If the user asked what changed, add a short bulleted list of changes after the t
 If something needs attention (a vague claim, a missing fact, an ambiguous sentence), add one line at the end starting with `Notes:`. Keep it to one or two sentences.
 
 If step 0 printed `UPDATE_AVAILABLE`, add one more line after everything else: `Update available: vX.Y.Z (currently vA.B.C). Run: python3 scripts/apply_update.py`. Nothing else about the update belongs in the reply.
+
+If step 0 printed `WIKIPEDIA_CHANGED`, add one more line after everything else (after the update line too, if both printed): `Note: the source Wikipedia page for AI-writing patterns changed — <url>. This does not change anything automatically.`
 
 ## 8. Update apply (after the reply is sent, never before or during)
 

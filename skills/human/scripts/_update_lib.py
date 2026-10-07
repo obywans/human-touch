@@ -17,6 +17,7 @@ import ssl
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 OWNER = "obywans"
@@ -27,6 +28,14 @@ OFFICIAL_REMOTE_RE = re.compile(
 )
 DEFAULT_TIMEOUT = 4  # seconds; never let a hung network call block /human
 DEFAULT_THROTTLE_SECONDS = 20 * 3600  # check at most once per ~20 hours
+
+# The source page this project's patterns were informed by. This is a
+# notice-only check: it reports that the page changed, it never reads the
+# page's content or changes SKILL.md on its own. A human reviews the change
+# and decides what, if anything, to incorporate -- the same way every other
+# change to SKILL.md has been made in this project.
+WIKI_PAGE_TITLE = "Wikipedia:Signs of AI writing"
+WIKI_API_URL = "https://en.wikipedia.org/w/api.php"
 
 
 def skill_dir_from_script(script_path: str) -> str:
@@ -119,6 +128,43 @@ def describe_fetch_error(exc: Exception) -> str:
     return f"unexpected error: {exc}"
 
 
+def fetch_wikipedia_revision(
+    timeout: float = DEFAULT_TIMEOUT, opener=urllib.request.urlopen
+) -> dict:
+    """Returns {"revid": int, "timestamp": str} for the current revision of
+    WIKI_PAGE_TITLE. Raises on any problem, same contract as
+    fetch_latest_release -- callers decide what "fail safely" means."""
+    params = urllib.parse.urlencode(
+        {
+            "action": "query",
+            "prop": "revisions",
+            "titles": WIKI_PAGE_TITLE,
+            "rvprop": "ids|timestamp",
+            "format": "json",
+        }
+    )
+    req = urllib.request.Request(
+        f"{WIKI_API_URL}?{params}",
+        headers={"User-Agent": "human-touch-update-check"},
+    )
+    with opener(req, timeout=timeout) as resp:
+        host = (resp.geturl() or "").split("/")[2].lower() if "://" in (resp.geturl() or "") else ""
+        if host and not host.endswith(".wikipedia.org"):
+            raise ValueError(f"unexpected redirect host: {host!r}")
+        raw = resp.read(1_000_000)
+    data = json.loads(raw.decode("utf-8", errors="replace"))
+    if not isinstance(data, dict):
+        raise ValueError(f"Wikipedia response is a {type(data).__name__}, not a JSON object")
+    pages = data.get("query", {}).get("pages", {})
+    if not pages:
+        raise ValueError("Wikipedia response has no page data")
+    page = next(iter(pages.values()))
+    revisions = page.get("revisions") or []
+    if not revisions or "revid" not in revisions[0]:
+        raise ValueError("Wikipedia response has no usable revision")
+    return {"revid": revisions[0]["revid"], "timestamp": revisions[0].get("timestamp")}
+
+
 def cache_dir() -> str:
     base = os.environ.get("HUMAN_TOUCH_CACHE_DIR") or os.path.join(
         os.path.expanduser("~"), ".cache", "human-touch"
@@ -152,8 +198,14 @@ def save_state(state: dict) -> None:
         pass  # caching is an optimization, never a requirement
 
 
-def should_check(state: dict, throttle_seconds: int = DEFAULT_THROTTLE_SECONDS) -> bool:
-    last = state.get("last_checked_epoch")
+def should_check(
+    state: dict, throttle_seconds: int = DEFAULT_THROTTLE_SECONDS, key: str = "last_checked_epoch"
+) -> bool:
+    """Same cache/throttle mechanism for any timed check this state dict
+    tracks -- the GitHub release check uses the default key, the Wikipedia
+    notice check below uses its own key, so one check running doesn't reset
+    the other's clock."""
+    last = state.get(key)
     if not isinstance(last, (int, float)):
         return True
     return (time.time() - last) >= throttle_seconds
