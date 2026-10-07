@@ -2,6 +2,17 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.2.4 (2026-10-08)
+
+### Fixed
+- `apply_update.py` labeled every failure to get a usable release — including GitHub responding fine but with something unexpected (a JSON array, `null`, or missing `tag_name`) — as "could not reach GitHub", which is misleading: GitHub was reached, the data just wasn't usable. `_update_lib.py` now has `describe_fetch_error()`, which classifies DNS failures, TLS errors, an HTTP error status, a timeout, and GitHub responding with unusable data as distinct, specific messages, matching the categories the connectivity diagnosis earlier in this project asked for but that hadn't actually been implemented yet. `fetch_latest_release()` also now explicitly checks the response is a JSON object before reading `tag_name` from it, instead of letting a non-dict response raise an unrelated `AttributeError`.
+- Three tests in `tests/test_update.py` read a file with a bare `open(...).read()` instead of a context manager, which leaked unclosed file handles (visible as a `ResourceWarning` under `python3 -W error`). Replaced with a small `read_text()` helper.
+
+### Verified before publishing
+- This closes out the last 2 of the 12 raw findings from the review that produced 1.2.2 and 1.2.3 (10 were already fixed, 1 was a confirmed false alarm). All 12 are now accounted for: fixed, or correctly dismissed.
+- New tests cover the error classifier directly (HTTP status, DNS, TLS, timeout, malformed JSON, unusable release data, an unclassified fallback) and confirm a malformed response is no longer reported as "could not reach GitHub". `python3 -W error tests/test_update.py` no longer reports a `ResourceWarning` from the three fixed tests (a `ResourceWarning` from constructing a test `HTTPError` object for the new error-classification test itself is a separate, cosmetic, test-only artifact, not the issue being fixed here).
+- Full suite: `tests/check_outputs.py` (16/16), `tests/test_update.py` (31/31, up from 21), `tests/test_check_outputs.py` (5/5), `tests/test_style_report.py` (2/2), `tests/style_report.py` runs cleanly. A real `check_update.py` run against the live GitHub API still correctly reports `UP_TO_DATE`.
+
 ## 1.2.3 (2026-10-08)
 
 ### Fixed
