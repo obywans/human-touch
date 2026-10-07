@@ -18,6 +18,7 @@ the feature needs to handle:
 import io
 import json
 import os
+import tarfile
 import shutil
 import subprocess
 import sys
@@ -228,6 +229,73 @@ class TestApplyUpdate(TempDirsMixin, unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("NOT_UPDATED", out)
         self.assertEqual(before, open(version_path, encoding="utf-8").read())
+
+    def _make_fake_release_tarball(self, skill_md_bytes: bytes, version_bytes: bytes | None = None) -> bytes:
+        """Builds a real .tar.gz with the same layout GitHub's release
+        tarballs use: one top-level '<owner>-<repo>-<sha>/' directory
+        containing skills/human/SKILL.md (and, optionally, VERSION)."""
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+            info = tarfile.TarInfo(name="obywans-human-touch-abc123/skills/human/SKILL.md")
+            info.size = len(skill_md_bytes)
+            tf.addfile(info, io.BytesIO(skill_md_bytes))
+            if version_bytes is not None:
+                vinfo = tarfile.TarInfo(name="obywans-human-touch-abc123/skills/human/VERSION")
+                vinfo.size = len(version_bytes)
+                tf.addfile(vinfo, io.BytesIO(version_bytes))
+        return buf.getvalue()
+
+    def _fake_urlopen_returning(self, body: bytes, host: str = "codeload.github.com"):
+        class _FakeResponse(io.BytesIO):
+            def __enter__(self_inner):
+                return self_inner
+
+            def __exit__(self_inner, *exc):
+                return False
+
+            def geturl(self_inner):
+                return f"https://{host}/tarball/release"
+
+        return mock.patch.object(apply_update.urllib.request, "urlopen", return_value=_FakeResponse(body))
+
+    # A real security finding, fixed and tested: a release archive member
+    # that declares a huge decompressed size must be rejected, and must not
+    # touch any real file on disk (defense against a decompression bomb).
+    def test_copy_mode_rejects_oversized_archive_member(self):
+        skill_dir = self.make_skill_dir("1.0.0")
+        version_path = os.path.join(skill_dir, "VERSION")
+        before = open(version_path, encoding="utf-8").read()
+
+        oversized = b"A" * (apply_update.MAX_MEMBER_BYTES + 1)
+        tarball_bytes = self._make_fake_release_tarball(oversized)
+
+        with self._fake_urlopen_returning(tarball_bytes):
+            rc, out = self.run_apply(
+                skill_dir, self.make_cache_dir(),
+                lambda **_: fake_release("v1.2.0", tarball_url="https://codeload.github.com/t.tar.gz"),
+                mode_override="copy",
+            )
+        self.assertEqual(rc, 1)
+        self.assertIn("NOT_UPDATED", out)
+        self.assertEqual(before, open(version_path, encoding="utf-8").read())
+
+    def test_copy_mode_accepts_a_normal_sized_release(self):
+        """Sanity check in the other direction: a real, small SKILL.md must
+        still update successfully, so the size cap isn't just rejecting
+        everything."""
+        skill_dir = self.make_skill_dir("1.0.0")
+        normal = b"---\nname: human\n---\n# HumanTouch\nSome normal-sized content.\n"
+        tarball_bytes = self._make_fake_release_tarball(normal, version_bytes=b"1.2.0\n")
+
+        with self._fake_urlopen_returning(tarball_bytes):
+            rc, out = self.run_apply(
+                skill_dir, self.make_cache_dir(),
+                lambda **_: fake_release("v1.2.0", tarball_url="https://codeload.github.com/t.tar.gz"),
+                mode_override="copy",
+            )
+        self.assertEqual(rc, 0)
+        with open(os.path.join(skill_dir, "SKILL.md"), "rb") as f:
+            self.assertEqual(f.read(), normal)
 
     # Scenario 8: recovery after a failed update
     def test_recovery_after_failed_update(self):
