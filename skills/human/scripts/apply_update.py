@@ -147,29 +147,50 @@ def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bo
         if not os.path.isfile(os.path.join(new_skill_dir, "SKILL.md")):
             raise ValueError("downloaded release has no skills/human/SKILL.md")
 
-        # Copy new files to temp paths next to the real ones, then atomically
-        # swap each in with os.replace — never leaves a half-written file.
+        # Figure out every (src, dst) pair this update would touch first,
+        # without writing anything yet.
+        pairs = []
         for name in ("SKILL.md", "VERSION"):
             src = os.path.join(new_skill_dir, name)
-            if not os.path.isfile(src):
-                continue
-            dst = os.path.join(skill_dir, name)
+            if os.path.isfile(src):
+                pairs.append((src, os.path.join(skill_dir, name)))
+
+        new_scripts = os.path.join(new_skill_dir, "scripts")
+        dst_scripts = os.path.join(skill_dir, "scripts")
+        if os.path.isdir(new_scripts):
+            if os.path.islink(dst_scripts):
+                raise ValueError(f"{dst_scripts} is a symlink; refusing to replace files inside it")
+            for name in os.listdir(new_scripts):
+                src = os.path.join(new_scripts, name)
+                if os.path.isfile(src):
+                    pairs.append((src, os.path.join(dst_scripts, name)))
+
+        # Refuse the whole update, before touching anything, if ANY
+        # destination is itself a symlink. os.replace() on a symlinked path
+        # unlinks the symlink and puts the new file there directly -- it
+        # never writes through to whatever the symlink pointed at. The
+        # README's install method symlinks the *human* directory as a
+        # whole, so SKILL.md/VERSION/scripts/* reached through it are
+        # ordinary files, not symlinks themselves, and this never triggers.
+        # But if something else ever symlinked an individual file here, a
+        # silent os.replace would quietly break that symlink and leave the
+        # real file stale with no warning -- the opposite of "refuse
+        # whenever unsure". Checking every destination before changing any
+        # of them also keeps this update all-or-nothing, the same as every
+        # other refusal path in this file.
+        linked = [dst for _, dst in pairs if os.path.islink(dst)]
+        if linked:
+            raise ValueError(f"refusing to update: symlinked file(s) would be replaced, not followed: {linked!r}")
+
+        # Now copy new files to temp paths next to the real ones, then
+        # atomically swap each in with os.replace — never leaves a
+        # half-written file.
+        if os.path.isdir(new_scripts):
+            os.makedirs(dst_scripts, exist_ok=True)
+        for src, dst in pairs:
             tmp_dst = dst + ".update-tmp"
             shutil.copyfile(src, tmp_dst)
             os.replace(tmp_dst, dst)
-
-        new_scripts = os.path.join(new_skill_dir, "scripts")
-        if os.path.isdir(new_scripts):
-            dst_scripts = os.path.join(skill_dir, "scripts")
-            os.makedirs(dst_scripts, exist_ok=True)
-            for name in os.listdir(new_scripts):
-                src = os.path.join(new_scripts, name)
-                if not os.path.isfile(src):
-                    continue
-                dst = os.path.join(dst_scripts, name)
-                tmp_dst = dst + ".update-tmp"
-                shutil.copyfile(src, tmp_dst)
-                os.replace(tmp_dst, dst)
 
     if not quiet:
         print(f"UPDATED via file copy to {target_tag}.")

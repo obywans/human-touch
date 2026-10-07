@@ -79,6 +79,14 @@ def main() -> int:
             continue
         src = in_path.read_text(encoding="utf-8")
         out = body(out_path.read_text(encoding="utf-8"))
+        if not out:
+            # An empty recorded file has no text to judge. Treat it the same
+            # as a missing one: say so, and keep it out of out_sets below so
+            # it doesn't drag the pairwise-similarity average down with a
+            # spurious zero, and don't fabricate a "kept"/"changed" casing
+            # label from comparing two empty strings.
+            print(f"{case:<24} (empty recorded output)")
+            continue
         in_mean, in_sd = sentence_stats(src)
         out_mean, out_sd = sentence_stats(out)
         lowercase_in = src.strip()[:1].islower() if src.strip() else False
@@ -95,7 +103,7 @@ def main() -> int:
     out_sets = {
         c: word_shapes(body((RECORDED / f"{c}.txt").read_text(encoding="utf-8")))
         for c in cases
-        if (RECORDED / f"{c}.txt").exists()
+        if (RECORDED / f"{c}.txt").exists() and body((RECORDED / f"{c}.txt").read_text(encoding="utf-8"))
     }
     in_pairs = [jaccard(in_sets[a], in_sets[b]) for a, b in itertools.combinations(cases, 2)]
     out_pairs = [

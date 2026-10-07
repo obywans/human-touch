@@ -2,6 +2,20 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.2.3 (2026-10-08)
+
+### Fixed
+- **Security:** `apply_update.py`'s copy-mode update called `os.replace()` directly on the destination path. On POSIX, replacing a path that is itself a symlink unlinks the symlink and puts the new file there — it never writes through to whatever the symlink pointed at. The README's own install method symlinks the whole `human` directory, not individual files inside it, so this never triggers for the documented install path (verified directly: a file reached through a symlinked parent directory is not itself a symlink). But if any individual file under `skills/human/` were ever symlinked some other way, the old code would silently destroy that symlink and leave the real target stale with no warning, contradicting its own "refuse whenever unsure" design. Reproduced with a real symlink before fixing. Now the whole copy-mode update is checked for any symlinked destination and refused outright, before anything is written, if one is found.
+- `tests/style_report.py` treated a present-but-empty recorded output file as real data: it printed a fabricated "kept" casing label (comparing two empty strings) and folded an empty word-bigram set into the pairwise-similarity average as a spurious 0.0 — the opposite of how a genuinely missing file is correctly excluded. Now an empty file is reported as `(empty recorded output)` and excluded the same way a missing one is.
+- Two new regression test files: `tests/test_check_outputs.py` (added in 1.2.2, listed here for completeness) and `tests/test_style_report.py`, plus a new case in `tests/test_update.py` for the symlink refusal.
+
+### How this was found
+A second bug-hunt-and-security review (a retry of the one that failed in 1.2.2's round) completed its search phase but its verification phase again hit a session usage limit partway through — 2 of 12 raw findings were independently verified and acted on in 1.2.2, the other 10 were not auto-verified. Of those 10, these 2 held up under hands-on re-verification (an empirical symlink test and a direct reproduction of the empty-file report), and are fixed here. The others were documentation/maintainability nits already addressed, already fixed, or not reviewed to the same depth this round.
+
+### Verified before publishing
+- All tests pass: `tests/check_outputs.py` (16/16), `tests/test_update.py` (21/21, up from 20), `tests/test_check_outputs.py` (5/5), `tests/test_style_report.py` (2/2, new), `tests/style_report.py` runs cleanly.
+- The symlink-destination scenario was reproduced directly against `os.replace()` before fixing, and against the real (patched) code after fixing, confirming the symlink and its target are both left untouched when refused.
+
 ## 1.2.2 (2026-10-08)
 
 ### Fixed

@@ -107,6 +107,8 @@ python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/1
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
 python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
+python3 tests/test_check_outputs.py             # checker regression tests (Unicode normalization, clean failures)
+python3 tests/test_style_report.py              # style_report.py regression test (empty vs. missing recorded file)
 ```
 
 - `tests/inputs/` holds sixteen representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian.
@@ -114,7 +116,8 @@ python3 tests/test_update.py                    # auto-update logic: expect all 
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
 - `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
-- `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
+- `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, a symlinked *individual file* being refused rather than silently replaced, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
+- `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
