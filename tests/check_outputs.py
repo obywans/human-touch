@@ -5,6 +5,9 @@ Usage: python3 tests/check_outputs.py <dir-with-<case>.txt-files>
 
 For each case it checks that:
   - every must_keep substring is still present (facts, names, terms);
+  - every claim in "claims" survives: each claim is a list of accepted
+    forms, and the claim passes if any form appears (case-insensitive).
+    This covers every claim of the source, not only the listed words;
   - no generic or case-specific must_not phrase appears (case-insensitive);
   - the rewrite contains no em dash.
 The line starting with "Notes:" (or "Notes :" in French) is ignored, because it
@@ -34,6 +37,9 @@ def check(case: str, text: str) -> list[str]:
     for item in spec["must_keep"]:
         if item not in b:
             problems.append(f"missing kept item: {item!r}")
+    for forms in spec.get("claims", []):
+        if not any(form.lower() in low for form in forms):
+            problems.append(f"claim lost, none of {forms!r} found")
     for phrase in EXPECT["generic_must_not"] + spec["must_not"]:
         if phrase.lower() in low:
             problems.append(f"found banned phrase: {phrase!r}")

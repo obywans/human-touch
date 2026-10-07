@@ -1,0 +1,1 @@
+El servicio guarda las sesiones en Redis durante 30 minutos. Si el token expira, el cliente recibe un código 401 y debe volver a autenticarse. Recomendamos aumentar el TTL solo en entornos con pocos usuarios, porque un TTL alto consume más memoria. La configuración está en config/sesiones.yml.

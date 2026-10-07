@@ -1,5 +1,5 @@
 {
-  "_comment": "must_keep: exact substrings that must survive the rewrite (facts, names, terms, and the strength of the author's own claims such as praise). must_not: phrases that the rewrite must not contain (case-insensitive). The Notes line is ignored. generic_must_not applies to every case.",
+  "_comment": "claims: every claim of the source as a group of accepted forms; a claim survives if any form appears (case-insensitive). must_keep: exact substrings (facts, names, figures). must_not: phrases that must not appear. The Notes line is ignored. generic_must_not applies to every case.",
   "generic_must_not": [
     "In today's world",
     "It's important to note",
@@ -39,43 +39,237 @@
   "cases": {
     "01-generic-ai-en": {
       "must_keep": ["team", "high-performing"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["communicat"],
+        ["team"],
+        ["trust"],
+        ["progress"],
+        ["block"],
+        ["follow"],
+        ["consisten"],
+        ["high-performing", "high performing"]
+      ]
     },
     "02-professional-es": {
       "must_keep": ["Estimado Carlos", "14 de marzo", "12.500 €", "Ana García"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["14 de marzo"],
+        ["12.500"],
+        ["calidad"],
+        ["excepcional"],
+        ["cinco"],
+        ["disposición"]
+      ]
     },
     "03-casual-en": {
       "must_keep": ["Maria", "coffee", "report"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["report"],
+        ["nightmare"],
+        ["good"],
+        ["Maria"],
+        ["feedback"],
+        ["coffee"],
+        ["treat"]
+      ]
     },
     "04-already-natural-en": {
       "must_keep": ["migration script", "staging", "rollback", "Thursday", "logs"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["migration script"],
+        ["staging"],
+        ["rollback"],
+        ["Thursday"],
+        ["logs"],
+        ["ping"]
+      ]
     },
     "05-long-form-en": {
       "must_keep": ["1,200", "62%", "45 minutes", "38%", "2023", "three countries", "choices"],
-      "must_not": ["significant development", "It is important to recognize"]
+      "must_not": ["significant development", "It is important to recognize"],
+      "claims": [
+        ["1,200"],
+        ["three countries"],
+        ["62%"],
+        ["45 minutes"],
+        ["onboarding"],
+        ["38%"],
+        ["critic"],
+        ["expectations"],
+        ["onboarding"],
+        ["choices"]
+      ]
     },
     "06-generic-ai-fr": {
       "must_keep": ["communication", "performantes"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["communication"],
+        ["confiance"],
+        ["avancement"],
+        ["précis"],
+        ["blocage"],
+        ["suivi"],
+        ["constance"],
+        ["performantes"]
+      ]
     },
     "07-generic-ai-ro": {
       "must_keep": ["echipei", "performante"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["comunicare", "comunicarea"],
+        ["echipei"],
+        ["încredere"],
+        ["progres"],
+        ["blocaj"],
+        ["performante"]
+      ]
     },
     "08-professional-fr": {
       "must_keep": ["Madame Martin", "lot 3", "12 mai 2026", "8 400 €", "Julien Moreau", "quatre ingénieurs", "exemplaire"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["Madame Martin"],
+        ["lot 3"],
+        ["12 mai 2026"],
+        ["8 400"],
+        ["partenariat"],
+        ["exemplaire"],
+        ["quatre ingénieurs"],
+        ["remarquable", "engagement", "investie", "investi"],
+        ["disposition"]
+      ]
     },
     "09-professional-ro": {
       "must_keep": ["doamnă Ionescu", "lotului 3", "12 mai 2026", "8.400 lei", "Andrei Popescu", "patru ingineri", "exemplară"],
-      "must_not": []
+      "must_not": [],
+      "claims": [
+        ["doamnă Ionescu"],
+        ["lotului 3"],
+        ["12 mai 2026"],
+        ["8.400"],
+        ["parteneriat"],
+        ["exemplar"],
+        ["patru ingineri"],
+        ["angajament"],
+        ["dispoziția"]
+      ]
     },
     "10-translate-en-to-ro": {
       "must_keep": ["Andrei Popescu", "2026", "8.400", "lotului 3", "exemplară"],
-      "must_not": ["Dear ", "Kind regards", "It is important"]
+      "must_not": ["Dear ", "Kind regards", "It is important"],
+      "claims": [
+        ["Andrei Popescu"],
+        ["2026"],
+        ["8.400"],
+        ["lotului 3"],
+        ["parteneriat"],
+        ["exemplar"],
+        ["patru ingineri"],
+        ["angajament"],
+        ["întrebare"]
+      ]
+    },
+    "11-technical-en": {
+      "must_keep": ["toolkit@2.4.1", "API_KEY", "503", "~/.toolkit/logs/"],
+      "must_not": [],
+      "claims": [
+        ["toolkit@2.4.1"],
+        ["npm"],
+        ["Node.js 18", "Node 18"],
+        ["API_KEY"],
+        ["toolkit sync"],
+        ["40 seconds", "40 sec"],
+        ["1,200"],
+        ["503"],
+        ["five minutes", "5 minutes"],
+        ["rate-limit", "rate limit"],
+        ["per account"],
+        ["~/.toolkit/logs/"]
+      ]
+    },
+    "12-social-post-en": {
+      "must_keep": ["🚀", "#productivity", "#startups"],
+      "must_not": [],
+      "claims": [
+        ["dashboard"],
+        ["long road", "journey", "road"],
+        ["customer"],
+        ["design"],
+        ["backend"],
+        ["use"],
+        ["🚀"],
+        ["#productivity"],
+        ["#startups"]
+      ]
+    },
+    "13-whatsapp-es": {
+      "must_keep": ["hotel", "tráfico", "avenida"],
+      "must_not": [],
+      "claims": [
+        ["hotel"],
+        ["habitación"],
+        ["chica", "pequeña"],
+        ["limpia"],
+        ["9"],
+        ["recepción"],
+        ["avis"],
+        ["tráfico"],
+        ["avenida"]
+      ]
+    },
+    "14-proposal-en": {
+      "must_keep": ["$12,000", "$48,000", "$4,500", "40,000", "30"],
+      "must_not": [],
+      "claims": [
+        ["three-phase", "three phase", "3-phase", "three stages", "three phases"],
+        ["modernize", "modernis", "moderniz"],
+        ["$12,000"],
+        ["two-week", "two week", "2-week", "two weeks"],
+        ["40,000"],
+        ["$48,000"],
+        ["eight weeks", "8 weeks"],
+        ["$4,500"],
+        ["per month", "monthly", "month"],
+        ["30"],
+        ["risk"],
+        ["measurable"]
+      ]
+    },
+    "15-personal-ro": {
+      "must_keep": ["Mamă", "duminica", "plăcintele"],
+      "must_not": [],
+      "claims": [
+        ["Mamă", "mamă"],
+        ["sunat"],
+        ["ieri"],
+        ["birou"],
+        ["telefon"],
+        ["duminic"],
+        ["ploaie", "plouă"],
+        ["plăcint"],
+        ["piață"],
+        ["iubesc"]
+      ]
+    },
+    "16-technical-es": {
+      "must_keep": ["Redis", "401", "TTL", "config/sesiones.yml"],
+      "must_not": [],
+      "claims": [
+        ["Redis"],
+        ["30 minutos", "30 minutes"],
+        ["401"],
+        ["autentic"],
+        ["TTL"],
+        ["pocos usuarios", "pocos"],
+        ["memoria"],
+        ["config/sesiones.yml"]
+      ]
     }
   }
 }

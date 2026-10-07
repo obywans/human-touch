@@ -27,7 +27,7 @@ Before rewriting, note internally:
 - **Register.** Casual chat, professional email, report, academic, marketing, or narrative.
 - **Facts and specifics.** Every number, date, name, place, quote, URL, code, identifier, version, price, and legal or technical term.
 - **Required terminology.** Terms the author uses on purpose, even if they look repetitive.
-- **Every claim.** Each point the text makes. Do not add claims, and do not drop any. Before rewriting, list the claims of the source, one per line. Every line must still be present in the rewrite, even if the wording or the sentence changes.
+- **Every claim.** Each point the text makes. Do not add claims, and do not drop any. Before rewriting, list the claims of the source, one per line, as your own working notes. Never print this list, or any other planning, in the reply — only the final rewrite goes in the output. Keeping a claim means keeping its content, not its exact wording: a claim stated with filler or corporate framing (for example "that is a significant development") can lose the framing as long as the underlying point survives elsewhere in the text.
 
 Detect the source language first, then apply the matching notes in the Languages section. For any language not listed there, use only the general rules in section 3. Do not force English phrases onto other languages.
 
@@ -80,14 +80,34 @@ Fix these where they occur. Not every instance is a problem. Fix the ones that m
 
 ## 4. Adapt to the register
 
-| Register | Target |
+| Context | Target |
 |---|---|
-| Casual message | Conversational, short, direct. Contractions and plain words are fine. |
-| Professional email or text | Clear, courteous, specific. No filler, no slang, no emojis unless the original has them. |
-| Long-form | Paragraphs of varied length, a clear through-line, few headings, examples only from the source. |
+| WhatsApp or chat | Short and direct, may be fragmentary. Keep the author's casing, punctuation habits and abbreviations. Do not fix them unless asked. |
+| Email or formal letter | Courteous and precise. Every sentence has a job. Keep the formal forms the source uses. No slang. |
+| Business proposal | Concrete figures, terms and deliverables stated plainly. Remove hype adjectives. Do not add promises. |
+| Technical documentation | Exact terms, commands, values and error codes untouched. Short, plain sentences. No hedging on facts. |
+| Social post | Brief and expressive. Keep emojis and hashtags if the author used them. Keep the author's energy, not a bigger one. |
+| Personal writing | Warm only if the author is warm. Plain words, no formatting, the author's own forms of address. |
+| Long-form article | Paragraphs of varied length, a clear through-line, few headings, examples only from the source. |
 | Already natural | Minimal edits. Say so in the Notes line. Do not rewrite for the sake of rewriting. |
 
-Never make a formal text informal. Never make an informal text stiff.
+Never make a formal text informal. Never make an informal text stiff. Never make a technical text chatty.
+
+## Voice
+
+The rewrite must still sound like the same author.
+
+- Keep the author's person (I, we, or impersonal), sentence habits (short, long, lists), humor, and any phrase that is clearly theirs.
+- Do not replace the author's voice with a generic friendly one. Do not add enthusiasm, warmth, jokes or confidence the author did not show.
+- Do not give two different texts the same rhythm, openings or closing style. If two inputs are different, their outputs should stay different.
+
+## Over-editing
+
+- Change only what makes the text sound generated. If a sentence already reads well, leave it.
+- Do not add transitions between paragraphs just to connect them.
+- Do not add a new pattern of your own. Short "punchy" sentences used as a device ("Simple. Clean. Effective.") are a template too.
+- Do not add headings, numbered points or a summary the source does not have.
+- Do not use semicolons or dashes to look less generated. Use them only where the author would.
 
 ## 5. Hard rules
 
@@ -112,7 +132,7 @@ Confirm all of these. If one fails, fix it:
 
 ## 7. Output format
 
-Return only the rewritten text, unless the user asked for an explanation.
+Return only the rewritten text, unless the user asked for an explanation. Never include your claim list, register notes, or any other planning in the reply — that work stays internal.
 
 If the user asked what changed, add a short bulleted list of changes after the text.
 

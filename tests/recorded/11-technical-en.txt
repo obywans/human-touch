@@ -1,0 +1,3 @@
+Install the CLI with `npm install -g toolkit@2.4.1`. You need Node.js 18 or later. Before you run `toolkit sync`, set the `API_KEY` environment variable. A sync takes about 40 seconds for a project with 1,200 files. If the sync fails with error 503, wait five minutes and retry, because the service is rate-limited per account. Logs are written to `~/.toolkit/logs/`.
+
+Notes: The source was already plain technical prose, so this is a light edit that keeps every value and claim. The text does not say whether a retry after the five-minute wait can also fail with 503, or what to do then.

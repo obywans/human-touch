@@ -1,0 +1,1 @@
+To install the CLI, run npm install -g toolkit@2.4.1. The command requires Node.js 18 or later. Set the API_KEY environment variable before running toolkit sync. The sync takes about 40 seconds for a project with 1,200 files. If the sync fails with error 503, wait five minutes and retry, because the service is rate-limited per account. Logs are written to ~/.toolkit/logs/.
