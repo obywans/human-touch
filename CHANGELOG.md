@@ -2,6 +2,11 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.2.1 (2026-10-07)
+
+### Fixed
+- **Security:** `apply_update.py`'s copy-mode path capped the size of the *compressed* download, but not the size written during decompression — a decompression bomb (a small archive that expands to a huge amount of data) could have exhausted disk space. Flagged by a background security review of the 1.2.0 push, confirmed real, and fixed: each archive member is now rejected if its declared size exceeds 2 MB, and the actual bytes written are independently capped per file and across the whole archive (10 MB total), regardless of what the archive's own header claims. Two new tests prove it: one oversized member is rejected with nothing written to any real file, and one normal-sized release still updates successfully.
+
 ## 1.2.0 (2026-10-07)
 
 ### Added

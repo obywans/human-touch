@@ -33,6 +33,36 @@ import urllib.request
 
 import _update_lib as lib
 
+# A real SKILL.md/script in this project is a few KB. These caps are far
+# above that on purpose, but still bounded: they exist only to stop a
+# decompression bomb (a small .tar.gz that expands to gigabytes), not to
+# constrain legitimate content.
+MAX_MEMBER_BYTES = 2_000_000  # per extracted file
+MAX_TOTAL_BYTES = 10_000_000  # across the whole archive
+
+
+def _bounded_copy(src_fileobj, dst_path: str, max_bytes: int, remaining_budget: list[int]) -> int:
+    """Copy src_fileobj to dst_path, reading in chunks, and raise ValueError
+    the moment either this file's own cap or the shared remaining_budget
+    (checked and decremented in place, so callers can enforce an aggregate
+    cap across many files) would be exceeded. This bounds the actual bytes
+    written regardless of what a tar header claims the size is — a crafted
+    or corrupted header is not trusted."""
+    written = 0
+    with open(dst_path, "wb") as out:
+        while True:
+            chunk = src_fileobj.read(65536)
+            if not chunk:
+                break
+            written += len(chunk)
+            if written > max_bytes:
+                raise ValueError(f"archive member exceeds {max_bytes} bytes uncompressed")
+            if written > remaining_budget[0]:
+                raise ValueError(f"archive exceeds {MAX_TOTAL_BYTES} bytes uncompressed in total")
+            out.write(chunk)
+    remaining_budget[0] -= written
+    return written
+
 
 def report(reason: str, installed: str | None, latest: str | None) -> None:
     print(f"NOT_UPDATED reason=\"{reason}\" installed={installed or '?'} latest={latest or '?'}")
@@ -69,6 +99,7 @@ def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bo
         extract_dir = os.path.join(tmp, "extracted")
         os.makedirs(extract_dir, exist_ok=True)
         safe_root = os.path.realpath(extract_dir)
+        remaining_budget = [MAX_TOTAL_BYTES]
         with tarfile.open(archive_path, "r:gz") as tf:
             for member in tf.getmembers():
                 # Extract each member by hand instead of extractall(): only
@@ -81,12 +112,18 @@ def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bo
                 member_path = os.path.realpath(os.path.join(extract_dir, member.name))
                 if not (member_path == safe_root or member_path.startswith(safe_root + os.sep)):
                     raise ValueError(f"unsafe path in archive: {member.name!r}")
+                # Cheap first check against the header's declared size (a
+                # decompression bomb would normally lie here too, but it
+                # costs nothing to check); the real limit is enforced below
+                # on actual bytes read, which does not trust the header.
+                if member.size > MAX_MEMBER_BYTES:
+                    raise ValueError(f"archive member {member.name!r} declares {member.size} bytes, over the cap")
                 os.makedirs(os.path.dirname(member_path), exist_ok=True)
                 src_fileobj = tf.extractfile(member)
                 if src_fileobj is None:
                     continue
-                with src_fileobj as sf, open(member_path, "wb") as out:
-                    shutil.copyfileobj(sf, out)
+                with src_fileobj as sf:
+                    _bounded_copy(sf, member_path, MAX_MEMBER_BYTES, remaining_budget)
 
         # GitHub wraps the tarball in one top-level "<owner>-<repo>-<sha>/" dir.
         entries = [e for e in os.listdir(extract_dir) if not e.startswith(".")]
