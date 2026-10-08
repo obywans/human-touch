@@ -2,6 +2,15 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 1.3.1 (2026-10-08)
+
+### Fixed
+- `disable-model-invocation: true` and the description's "Invoke only when the user types /human" meant Claude would only run the skill in response to the literal `/human` command, and refused to run it when a user asked for the same thing in their own words (e.g. "make this sound more human"). That is tighter than intended: a user who doesn't know the exact command shouldn't be told the skill can't help them. Removed `disable-model-invocation` and reworded the description so Claude can invoke the skill either from `/human` or from a plain-language request to make text sound more natural, less AI-sounding, or more human, in any language.
+
+### Verified before publishing
+- Grepped the rest of `SKILL.md` and `README.md` for the same restriction — none left.
+- Full suite: `tests/check_outputs.py` (16/16), `tests/test_update.py` (36/36), `tests/test_check_outputs.py` (5/5), `tests/test_style_report.py` (2/2) — this change touches only the frontmatter/description, not the update or test code, and all were already passing before the change.
+
 ## 1.3.0 (2026-10-08)
 
 ### Added
