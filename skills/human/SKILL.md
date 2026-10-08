@@ -1,8 +1,7 @@
 ---
 name: human
-description: Rewrites text so it reads like natural, human-written prose in any language, with specific notes for English, Spanish, French and Romanian. Keeps the meaning, facts, language, terminology and the author's tone, and removes formulaic, repetitive or template-sounding patterns. Invoke only when the user types /human. It improves writing quality and does not target or guarantee any AI-detector result.
+description: Rewrites text so it reads like natural, human-written prose in any language, with specific notes for English, Spanish, French and Romanian. Keeps the meaning, facts, language, terminology and the author's tone, and removes formulaic, repetitive or template-sounding patterns. Invoke when the user runs /human, or asks in their own words (in any language) to make a piece of text sound more natural, less AI-sounding, or more human. It improves writing quality and does not target or guarantee any AI-detector result.
 argument-hint: "[text, or path to a text file]"
-disable-model-invocation: true
 ---
 
 # HumanTouch
