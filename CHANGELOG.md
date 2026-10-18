@@ -2,10 +2,10 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
-## 2.1.0 (2026-10-18)
+## 2.1.0 (18-10-2026)
 
 ### Added
-- Restored the Claude Code skill's auto-updater (`scripts/check_update.py`, `apply_update.py`, `_update_lib.py`, removed in 2.0.0), unchanged from 1.3.1: anyone still on 1.3.1 or earlier finds and applies 2.1.0 the same way they always found releases, with no gap to bridge. The portable adapters (ChatGPT, Gemini, local Qwen) are unaffected — they are plain pasted text and cannot run scripts, so they get no updater and never will.
+- Restored the skill form's auto-updater (`scripts/check_update.py`, `apply_update.py`, `_update_lib.py`, removed in 2.0.0), unchanged from 1.3.1: anyone still on 1.3.1 or earlier finds and applies 2.1.0 the same way they always found releases, with no gap to bridge. The portable adapters (ChatGPT, Gemini, local Qwen) are unaffected — they are plain pasted text and cannot run scripts, so they get no updater and never will.
 - Changed the update flow from silent auto-apply to explicit consent: on finding a newer version, `/human` now asks, in the language of the user's request, whether to update now, and only runs `apply_update.py` on an explicit yes. The previous behavior (1.2.0-1.3.1) applied the update automatically after the reply and only reported it after the fact.
 - Restored `tests/test_update.py` (36 tests), unchanged from 1.3.1.
 

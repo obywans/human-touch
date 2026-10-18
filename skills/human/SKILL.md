@@ -21,7 +21,7 @@ If asked to remove plagiarism, disguise copied work, bypass an AI detector, or g
 
 ## 0. Update check (before anything else, but never blocking)
 
-This step only applies when this skill is installed in Claude Code, from its own directory (the one that contains this SKILL.md) — it has no effect in the portable adapters (ChatGPT, Gemini, local Qwen), which cannot run scripts and have no update mechanism.
+This step only applies to this installed skill form, run from its own directory (the one that contains this SKILL.md) — it has no effect in the portable adapters (ChatGPT, Gemini, local Qwen), which cannot run scripts and have no update mechanism.
 
 From this same directory, run:
 
