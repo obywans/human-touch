@@ -8,7 +8,7 @@
 
 ## One workflow, several hosts
 
-The writing rules and modes are bundled in `skills/human/SKILL.md`; provider-neutral instructions are in `adapters/shared/CORE-PROMPT.md`. The 2.0.0 package has no updater, network call, MCP server, or external service dependency. Its skill only gives instructions; the host model processes the text.
+The writing rules and modes are bundled in `skills/human/SKILL.md`; provider-neutral instructions are in `adapters/shared/CORE-PROMPT.md`. None of this has an MCP server or any other external service dependency; it only gives instructions, and the host model processes the text. The Claude Code skill is the one exception that touches the network at all: it can check for and, with your consent, apply updates to itself (see "Auto-update" below). The portable adapters (ChatGPT, Gemini, local Qwen) are plain text you paste into another assistant — they cannot run scripts, so they have no update mechanism and never will; update them by re-pasting a newer version yourself.
 
 | Where you want to use it | Setup |
 |---|---|
@@ -22,7 +22,31 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `2.0.0`. Updates are manual; using it will not contact GitHub.
+This package is version `2.1.0`.
+
+## Auto-update (Claude Code skill only)
+
+This section applies to the Claude Code skill (`skills/human/`). The portable adapters have no update mechanism — see above.
+
+Once installed, `/human` checks whether a newer version exists, and asks you, in your own language, before doing anything about it.
+
+**How it works:** the first thing `/human` does is run `scripts/check_update.py`, which compares your installed version (`skills/human/VERSION`) against [the latest GitHub release](https://github.com/obywans/human-touch/releases/latest). To avoid hitting GitHub on every single use, it caches the result in `~/.cache/human-touch/update-state.json` and only checks again after about 20 hours.
+
+If a newer version exists, the rewrite is delivered exactly as normal, and only afterward — never before, never in the middle — does `/human` add one line asking, in the language you wrote to it in, whether you want to update now. Nothing is applied unless you answer yes. If you do, `scripts/apply_update.py` runs and reports whether it actually succeeded; if you say no, or don't answer, nothing happens and it won't ask again that session.
+
+**What "update" means here:** only the files in `skills/human/` (mainly `SKILL.md` and `VERSION`) are replaced with the new release's versions. Nothing downloaded is ever executed as code — a copy-mode update downloads a release source archive from GitHub and copies specific files out of it; a git-mode update runs a fast-forward-only `git pull`-equivalent, which git itself refuses if your copy has local changes or has diverged.
+
+**Safety, in order:**
+- Every request goes to the fixed, hardcoded `github.com/obywans/human-touch` API endpoint — never a URL from a file, argument, or anything downloaded.
+- If you installed via `git clone`/`ln -s`, it checks `git remote get-url origin` actually points at the official repo before touching anything. A fork is left alone, with instructions to update it yourself.
+- If you installed via a plain copy (`cp -R`), it still works: version detection and the update itself use the files on disk, not git.
+- Any uncommitted local edits to a git install stop the update — it will not overwrite your changes.
+- Any problem at all (offline, GitHub down, a malformed response, a permission error, a fork, local edits) leaves every file exactly as it was and is reported as "could not update, here's why, and here's the manual command" — never a silent failure, never a partial write. `/human` itself is unaffected either way; the rewrite above still happened.
+- `python3 scripts/apply_update.py --dry-run` shows what would happen without changing anything.
+
+**If you installed before 2.1.0 (1.3.1 or earlier):** your existing updater already points at "the latest GitHub release", so it will find and apply 2.1.0 the same way it always found releases — nothing extra to do. **If you installed 2.0.0 specifically**, that release shipped with no updater at all, so there is nothing on your disk to trigger the check; copy or symlink `skills/human` again from this repository to get it back.
+
+**Wikipedia notice.** HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once, by hand, not kept in sync automatically. The same `check_update.py` run, using the same cache file and the same ~20-hour throttle, also asks Wikipedia's API for that page's current revision id — not its content — and compares it to the last one seen. If it changed, `/human` adds one line, in your language: that the source page changed, with its URL. That is the whole effect: a notice. Nothing is read from the page, nothing in `SKILL.md` changes on its own, and a person (currently: the maintainer) decides whether to look at the change, test anything worth incorporating against the existing cases, and publish it as a new version. Same fail-safe behavior as the code-update check: offline, Wikipedia down, or a malformed response just means no notice that time, and `/human` is unaffected either way.
 
 ## Usage
 
@@ -94,6 +118,7 @@ The tests check the behavior that matters: keeping the facts and the language, a
 python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/16 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
+python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
 python3 tests/test_check_outputs.py             # checker regression tests (Unicode normalization, clean failures)
 python3 tests/test_style_report.py              # style_report.py regression test (empty vs. missing recorded file)
 ```
@@ -103,6 +128,7 @@ python3 tests/test_style_report.py              # style_report.py regression tes
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
 - `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
+- `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, a symlinked *individual file* being refused rather than silently replaced, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
 - `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
@@ -112,8 +138,9 @@ The checker verifies the claims and facts it was told to look for. It does not r
 ```text
 plugin.json                       portable ChatGPT/Codex plugin manifest
 skills/human/SKILL.md             the slash-command skill
-skills/human/VERSION              local package version
-adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions
+skills/human/VERSION              local package version, read by the update scripts
+skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py (Claude Code skill only)
+adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions (no update mechanism)
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
 examples/evaluation.md            nine cases with what should and must not change
