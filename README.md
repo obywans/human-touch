@@ -1,14 +1,18 @@
 # HumanTouch
 
-`/human` is a writing skill. It can improve prose, preserve technical code while editing surrounding text, or review citations against sources you provide. It keeps the meaning, facts, language, and tone of the original.
+HumanTouch is a set of writing instructions you can run in any AI assistant — it is not tied to one product. However you run it, it does the same three things to the text you give it:
+
+- **Rewrite** (the default): makes the writing clearer, more varied, and free of filler and formulaic patterns, while keeping every fact, claim, name, date, and the author's own voice exactly as given.
+- **Code-safe rewrite**: the same, but for text mixed with code — fenced code blocks, inline code, commands, identifiers, URLs, and configuration values are left byte-for-byte untouched.
+- **Source review**: checks a draft's claims against sources you supply, flags unsupported claims and missing or mismatched citations, and never invents a reference.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
 
 **What it is not:** a tool for AI-detection evasion or disguising plagiarism. It does not target any detector, promise a score, verify sources it cannot access, or claim that paraphrased copied work is original.
 
-## One workflow, several hosts
+## One set of rules, several hosts
 
-The writing rules and modes are bundled in `skills/human/SKILL.md`; provider-neutral instructions are in `adapters/shared/CORE-PROMPT.md`. None of this has an MCP server or any other external service dependency; it only gives instructions, and the host model processes the text. The Claude Code skill is the one exception that touches the network at all: it can check for and, with your consent, apply updates to itself (see "Auto-update" below). The portable adapters (ChatGPT, Gemini, local Qwen) are plain text you paste into another assistant — they cannot run scripts, so they have no update mechanism and never will; update them by re-pasting a newer version yourself.
+The writing rules and modes live in `skills/human/SKILL.md` for the skill form; the same rules in host-neutral form live in `adapters/shared/CORE-PROMPT.md`. Neither needs an MCP server or any other external service; both are instructions only, and whichever assistant you run them in does the actual writing. Only the skill form (`skills/human/`) can check its own version and, with your consent, update itself — see "Auto-update" below. The portable adapters below are plain text you paste into another assistant; they cannot run scripts, so they have no update mechanism and never will — update them by pasting in a newer version yourself.
 
 | Where you want to use it | Setup |
 |---|---|
@@ -24,9 +28,9 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 This package is version `2.1.0`.
 
-## Auto-update (Claude Code skill only)
+## Auto-update (skill form only)
 
-This section applies to the Claude Code skill (`skills/human/`). The portable adapters have no update mechanism — see above.
+This section applies to the skill form installed at `skills/human/`. The portable adapters have no update mechanism — see above.
 
 Once installed, `/human` checks whether a newer version exists, and asks you, in your own language, before doing anything about it.
 
@@ -139,7 +143,7 @@ The checker verifies the claims and facts it was told to look for. It does not r
 plugin.json                       portable ChatGPT/Codex plugin manifest
 skills/human/SKILL.md             the slash-command skill
 skills/human/VERSION              local package version, read by the update scripts
-skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py (Claude Code skill only)
+skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py (skill form only)
 adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions (no update mechanism)
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
