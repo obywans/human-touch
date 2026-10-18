@@ -1,51 +1,32 @@
 # HumanTouch
 
-`/human` is a skill that rewrites text so it reads like natural, human-written prose. It removes filler openers, template-like transitions, repeated vocabulary, and uniform sentence rhythm, and keeps the meaning, facts, language, and tone of the original.
+`/human` is a writing skill. It can improve prose, preserve technical code while editing surrounding text, or review citations against sources you provide. It keeps the meaning, facts, language, and tone of the original.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
 
-**What it is not:** a tool for AI-detection evasion. HumanTouch does not target any detector, does not promise any score, and does not claim its output will pass one. The goal is text that a reader finds natural.
+**What it is not:** a tool for AI-detection evasion or disguising plagiarism. It does not target any detector, promise a score, verify sources it cannot access, or claim that paraphrased copied work is original.
 
-## Installation
+## One workflow, several hosts
 
-HumanTouch is a single skill file. Install it as a personal skill, which makes the command `/human` available in every project:
+The writing rules and modes are bundled in `skills/human/SKILL.md`; provider-neutral instructions are in `adapters/shared/CORE-PROMPT.md`. The 2.0.0 package has no updater, network call, MCP server, or external service dependency. Its skill only gives instructions; the host model processes the text.
 
-```bash
-mkdir -p ~/.claude/skills
-ln -s ~/Desktop/human-touch/skills/human ~/.claude/skills/human
-```
+| Where you want to use it | Setup |
+|---|---|
+| ChatGPT and Codex | Use the portable `plugin.json` package in a supported local plugin marketplace. |
+| Claude Code | Copy or symlink `skills/human` into Claude Code's skills folder. |
+| Gemini | Create a Gem and paste the instructions from `adapters/gemini/GEM.md`. |
+| Local Qwen / llama.cpp | Paste `adapters/local-qwen/SYSTEM-PROMPT.md` into the local chat's system prompt. It makes no network requests. |
+| ChatGPT custom instructions | Use the compact text in `adapters/chatgpt/CUSTOM-INSTRUCTIONS.md` if you don't install the full skill as a plugin. |
 
-Use `ln -s` so that a `git pull` in the repository updates the skill. If you prefer a copy, use `cp -R skills/human ~/.claude/skills/` instead.
+The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://developers.openai.com/plugins/build/plugins). ChatGPT Custom Instructions are an account setting, not local inference ([OpenAI instructions](https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions)). Gemini Gems accept reusable instructions ([Google instructions](https://support.google.com/gemini/answer/15236405)). For local llama.cpp, the system message is passed by the client with each chat request ([llama.cpp server guide](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)).
 
-Start a new session after installing, so the skill is picked up.
+**Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-The skill is installed as a standalone skill rather than as a plugin on purpose. Plugin skills are namespaced, so a plugin would be invoked as `/human-touch:human`, not `/human`.
-
-## Auto-update
-
-Once installed, `/human` keeps itself current without you having to remember `git pull` or check the releases page.
-
-**How it works:** a Claude Code skill is a file read at the moment you type `/human` — there is no background process for it between invocations. So the check happens as part of using `/human` itself: the first thing `/human` does is run `scripts/check_update.py`, which compares your installed version (`skills/human/VERSION`) against [the latest GitHub release](https://github.com/obywans/human-touch/releases/latest). To avoid hitting GitHub on every single use, it caches the result in `~/.cache/human-touch/update-state.json` and only checks again after about 20 hours.
-
-If a newer version exists, the rewrite is delivered exactly as normal, and only afterward — never before, never in the middle — does `/human` add one line telling you the current and latest version, and separately run `scripts/apply_update.py` to try to update for next time. Running the update strictly after the reply is the point: it only ever changes what the *next* `/human` call reads, never the one that just answered you.
-
-**What "update" means here:** only the files in `skills/human/` (mainly `SKILL.md` and `VERSION`) are replaced with the new release's versions. Nothing downloaded is ever executed as code — a copy-mode update downloads a release source archive from GitHub and copies specific files out of it; a git-mode update runs a fast-forward-only `git pull`-equivalent, which git itself refuses if your copy has local changes or has diverged.
-
-**Safety, in order:**
-- Every request goes to the fixed, hardcoded `github.com/obywans/human-touch` API endpoint — never a URL from a file, argument, or anything downloaded.
-- If you installed via `git clone`/`ln -s`, it checks `git remote get-url origin` actually points at the official repo before touching anything. A fork is left alone, with instructions to update it yourself.
-- If you installed via a plain copy (`cp -R`), it still works: version detection and the update itself use the files on disk, not git.
-- Any uncommitted local edits to a git install stop the update — it will not overwrite your changes.
-- Any problem at all (offline, GitHub down, a malformed response, a permission error, a fork, local edits) leaves every file exactly as it was and is reported as "could not update, here's why, and here's the manual command" — never a silent failure, never a partial write. `/human` itself is unaffected either way; the rewrite above still happened.
-- `python3 scripts/apply_update.py --dry-run` shows what would happen without changing anything.
-
-To turn off the automatic apply step and only ever get the one-line notice, delete or don't run `scripts/apply_update.py` yourself — the check in step 0 never applies anything on its own.
-
-**Wikipedia notice.** HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once, by hand, not kept in sync automatically. The same `check_update.py` run, using the same cache file and the same ~20-hour throttle, also asks Wikipedia's API for that page's current revision id — not its content — and compares it to the last one seen. If it changed, `/human` adds one line: `Note: the source Wikipedia page for AI-writing patterns changed — <url>. This does not change anything automatically.` That is the whole effect: a notice. Nothing is read from the page, nothing in `SKILL.md` changes on its own, and a person (currently: the maintainer) decides whether to look at the change, test anything worth incorporating against the existing cases, and publish it as a new version — the same process every change to `SKILL.md` has gone through so far. Same fail-safe behavior as the code-update check: offline, Wikipedia down, or a malformed response just means no notice that time, and `/human` is unaffected either way.
+This package is version `2.0.0`. Updates are manual; using it will not contact GitHub.
 
 ## Usage
 
-Type `/human` followed by the text:
+Type `/human` followed by the text where slash skills are supported, or ask the assistant directly to improve, edit safely around code, or review sources:
 
 ```text
 /human hey! so i finally finished the report, it was kind of a nightmare but i think it turned out pretty good.
@@ -61,9 +42,14 @@ With no text, `/human` asks for the text.
 
 Ask for an explanation of the changes by adding it to the request, for example `/human please list what you changed: <text>`.
 
-The skill only runs when you type `/human`. The assistant does not invoke it on its own.
+Choose a mode when useful:
 
-To have the assistant apply the same rules automatically, in every reply of a session or a project, see [`docs/always-on.md`](docs/always-on.md). That is a block of instructions you add yourself to the project's instructions file; it is not a different mode of the skill.
+- `/human code-safe rewrite: <text>` edits the prose while keeping code blocks, inline code, commands, identifiers, URLs, and configuration values unchanged.
+- `/human source review: <draft and references>` checks claims against the references you provide and reports unsupported claims or citation gaps. It does not invent sources.
+
+For copied material, HumanTouch can help you write an original explanation from your own understanding, retain quotations, and cite sources. It cannot make copied ideas original by rewording them.
+
+On ChatGPT or Gemini, use the matching plugin/custom-instructions/Gem setup above. On local Qwen, keep the prompt in the system message. This does not automatically configure every app on your device.
 
 ## What the skill changes
 
@@ -108,7 +94,6 @@ The tests check the behavior that matters: keeping the facts and the language, a
 python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/16 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
-python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
 python3 tests/test_check_outputs.py             # checker regression tests (Unicode normalization, clean failures)
 python3 tests/test_style_report.py              # style_report.py regression test (empty vs. missing recorded file)
 ```
@@ -118,7 +103,6 @@ python3 tests/test_style_report.py              # style_report.py regression tes
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
 - `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
-- `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, a symlinked *individual file* being refused rather than silently replaced, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
 - `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
@@ -126,9 +110,10 @@ The checker verifies the claims and facts it was told to look for. It does not r
 ## Repository layout
 
 ```text
-skills/human/SKILL.md             the skill (the only file the assistant needs to follow /human)
-skills/human/VERSION              the installed version number, read by the update scripts
-skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py
+plugin.json                       portable ChatGPT/Codex plugin manifest
+skills/human/SKILL.md             the slash-command skill
+skills/human/VERSION              local package version
+adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
 examples/evaluation.md            nine cases with what should and must not change
