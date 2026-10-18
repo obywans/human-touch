@@ -1,28 +1,23 @@
 ---
 name: human
-description: Rewrites text so it reads like natural, human-written prose in any language, with specific notes for English, Spanish, French and Romanian. Keeps the meaning, facts, language, terminology and the author's tone, and removes formulaic, repetitive or template-sounding patterns. Invoke when the user runs /human, or asks in their own words (in any language) to make a piece of text sound more natural, less AI-sounding, or more human. It improves writing quality and does not target or guarantee any AI-detector result.
+description: Improves natural prose while preserving meaning, facts, language, voice, code and source attribution. Can also review citations against sources the user provides. Does not evade AI detectors or disguise plagiarism. Invoke with /human or when the user asks for these writing-quality or source-review tasks.
 argument-hint: "[text, or path to a text file]"
 ---
 
 # HumanTouch
 
-Rewrite the text in $ARGUMENTS so it reads as natural, human-written prose.
+Use the requested mode for $ARGUMENTS. If no mode is specified, use **Rewrite**.
 
 The goal is writing quality: clearer, more varied, more specific to its context, and free of template-like habits. It is not a tool for evading AI detectors. Never say or imply that the output will pass a detector.
 
-## 0. Update check (before anything else, but never blocking)
+Available modes:
+- **Rewrite** (default): improve prose under the rules below.
+- **Code-safe rewrite**: improve prose around technical material while keeping every fenced code block, inline code span, command, identifier, URL, and configuration value byte-for-byte unchanged. If a passage mixes code and prose and the boundaries are unclear, ask before editing it.
+- **Source review**: inspect a draft and sources supplied by the user. Match claims to the provided sources, identify unsupported claims and missing or mismatched citations, and suggest where attribution is needed. Do not invent references, claim to have verified sources that were not supplied or accessible, or silently remove attribution. Return findings separately from the draft; do not rewrite the draft unless asked.
 
-From this same directory (the one that contains this SKILL.md), run:
+Examples: `/human code-safe rewrite: <text>` or `/human source review: <draft and references>`.
 
-```
-python3 scripts/check_update.py --quiet
-```
-
-Give it a few seconds at most. This never fails loudly and never changes anything on disk; if it prints nothing, or errors, or the file is missing, say nothing about updates and go straight to step 1 — a broken or offline check must never stop or delay the rewrite.
-
-If it prints a line starting with `UPDATE_AVAILABLE`, remember it, but do not mention it yet.
-
-If it prints a line starting with `WIKIPEDIA_CHANGED`, remember it too. This only means the source Wikipedia page these patterns were informed by has changed since it was last checked — it is not a code update, and nothing about $ARGUMENTS or the rewrite changes because of it.
+If asked to remove plagiarism, disguise copied work, bypass an AI detector, or guarantee a detector result, do not perform that operation. Offer a transparent alternative: help write an original explanation from the user's own understanding, preserve quotations, and cite the sources they provide. Never claim that a paraphrase makes copied ideas original.
 
 ## 1. Read the input
 
@@ -155,19 +150,3 @@ Return only the rewritten text, unless the user asked for an explanation. Never 
 If the user asked what changed, add a short bulleted list of changes after the text.
 
 If something needs attention (a vague claim, a missing fact, an ambiguous sentence), add one line at the end starting with `Notes:`. Keep it to one or two sentences.
-
-If step 0 printed `UPDATE_AVAILABLE`, add one more line after everything else: `Update available: vX.Y.Z (currently vA.B.C). Run: python3 scripts/apply_update.py`. Nothing else about the update belongs in the reply.
-
-If step 0 printed `WIKIPEDIA_CHANGED`, add one more line after everything else (after the update line too, if both printed): `Note: the source Wikipedia page for AI-writing patterns changed — <url>. This does not change anything automatically.`
-
-## 8. Update apply (after the reply is sent, never before or during)
-
-Only after you have already given the full reply above. This step must never change what the user just received — it only affects the *next* time `/human` runs.
-
-If step 0 printed `UPDATE_AVAILABLE`, run, from the same directory:
-
-```
-python3 scripts/apply_update.py --quiet
-```
-
-Do not report its outcome to the user unless they ask. A failed or refused update is normal and safe: nothing on disk changes, and the one-line notice in step 7 already told them the manual command. Never retry it in the same turn, and never let a failure here affect anything that already happened in this reply.

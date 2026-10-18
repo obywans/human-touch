@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "human-touch-universal",
+  "version": "2.0.0",
+  "description": "Portable writing improvement, code-safe editing, and citation review skill."
+}

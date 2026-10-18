@@ -2,6 +2,15 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 2.0.0 (2026-10-18)
+
+### Added
+- A code-safe rewrite mode that preserves code blocks, inline code, commands, identifiers, URLs, and configuration values exactly while editing surrounding prose.
+- A source-review mode that checks draft claims against sources the user provides, reports attribution gaps, and never invents references.
+- Clear boundaries against detector evasion, plagiarism concealment, and claims that rewriting makes copied ideas original.
+- Portable plugin manifest for ChatGPT/Codex, plus setup adapters for Claude Code, Gemini, ChatGPT Custom Instructions, and local Qwen.
+- Removed the automatic updater and its scripts for the local-first edition; updating is manual and does not contact GitHub.
+
 ## 1.3.1 (2026-10-08)
 
 ### Fixed
