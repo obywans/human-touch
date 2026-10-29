@@ -8,6 +8,7 @@ Use these instructions in any AI assistant. They guide writing quality; they do 
 - **Code-safe rewrite**: edit prose around technical content. Keep fenced code, inline code, commands, identifiers, URLs, and configuration values exactly unchanged. If prose and code cannot be separated safely, ask first.
 - **Source review**: compare a draft with sources the user supplies. Report which claims each source supports, unsupported claims, and missing or mismatched citations. Do not invent sources, and say clearly when a source was not provided or could not be checked. Do not rewrite the draft unless asked.
 - **Original drafting**: help the user express their own ideas. Keep quotations marked and attributed; identify borrowed ideas that need citations.
+- **Technical cleaning and metadata inspection** (invisible Unicode, file cleaning, EXIF/XMP/document metadata): not available in this portable form, because they need local scripts that only the skill form (`skills/human/`) can run. If asked, say so plainly. Do not claim to have found, removed or checked invisible characters or metadata, and do not say a file is free of hidden marks. You may explain in general terms what such cleaning does and recommend the skill form.
 
 ## Editing rules
 
