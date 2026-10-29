@@ -2,6 +2,18 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## Unreleased
+
+### Added
+- **Clean** operation (`scripts/text_clean.py`, `scripts/file_clean.py`): finds and removes invisible or anomalous Unicode (zero-width characters, soft hyphens, blank fillers, hidden tag characters, control characters, odd spaces and line separators, direction marks in left-to-right text) and reports every change. Keeps legitimate uses in context (emoji, Persian and Indic joiners, direction marks in right-to-left text, French non-breaking spaces) and reports them as kept. A built-in check proves the visible characters are unchanged. Works on pasted text and TXT, Markdown, HTML and DOCX files, and extracts and cleans PDF text through `pdftotext` when installed. Code regions are never modified.
+- **Metadata** operation (`scripts/metadata_inspect.py`): inspects EXIF (including GPS and serial numbers), XMP, IPTC, PNG text chunks, Office document properties, PDF info and HTML meta; explains each field; states what was not checked. Removal works on whole blocks of JPEG, PNG and Office files, writes a new file, is a dry run unless `--confirm` is given, keeps pixels, colour profile and orientation, and re-inspects the result. C2PA credentials and digital signatures are detected (not validated), never removed, and a file carrying them is refused unless `--break-provenance` is added.
+- SKILL.md: Clean and Metadata as separate modes, and a technical pre-clean for Rewrite and Code-safe rewrite whose changes are reported in the `Notes:` line.
+- Portable adapters now say plainly that these operations need the skill form and must never be claimed.
+- Tests: `test_text_clean.py` (37), `test_file_clean.py` (16), `test_metadata.py` (27), with in-memory fixtures. No new dependencies; Python standard library only; macOS, Linux and Windows.
+
+### Not included
+- No PDF metadata removal or PDF rewriting, no HTML or WebP metadata removal, no OCR for images, no rewriting of tracked-change author names. These are listed in the README table and refused or reported rather than approximated.
+
 ## 2.1.0 (18-10-2026)
 
 ### Added

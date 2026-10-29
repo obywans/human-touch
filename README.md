@@ -1,10 +1,15 @@
 # HumanTouch
 
-HumanTouch is a set of writing instructions you can run in any AI assistant — it is not tied to one product. However you run it, it does the same three things to the text you give it:
+HumanTouch is a set of writing instructions you can run in any AI assistant — it is not tied to one product. However you run it, it does the same three things to the text you give it (the skill form adds two local technical operations, listed after them):
 
 - **Rewrite** (the default): makes the writing clearer, more varied, and free of filler and formulaic patterns, while keeping every fact, claim, name, date, and the author's own voice exactly as given.
 - **Code-safe rewrite**: the same, but for text mixed with code — fenced code blocks, inline code, commands, identifiers, URLs, and configuration values are left byte-for-byte untouched.
 - **Source review**: checks a draft's claims against sources you supply, flags unsupported claims and missing or mismatched citations, and never invents a reference.
+
+In the skill form, two further, separate operations run local scripts (see "Technical modes: Clean and Metadata"):
+
+- **Clean**: finds and removes invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in text and in TXT, Markdown, HTML and DOCX files, and extracts and cleans the text of PDFs. It never changes wording and always reports what it changed.
+- **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explains it, and removes it only with your explicit consent. C2PA content credentials and digital signatures are preserved.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
 
@@ -79,6 +84,50 @@ For copied material, HumanTouch can help you write an original explanation from 
 
 On ChatGPT or Gemini, use the matching plugin/custom-instructions/Gem setup above. On local Qwen, keep the prompt in the system message. This does not automatically configure every app on your device.
 
+## Technical modes: Clean and Metadata
+
+Skill form only. These run Python scripts from `skills/human/scripts/` on your own machine. They need only Python 3.10 or newer and the standard library: nothing to install, no network access, no uploads. They are written to be portable across macOS, Linux and Windows (use `py -3` or `python` where this page says `python3`) and handle text in any language and script; output is forced to UTF-8 so names and metadata in any language print correctly. The test suite has so far been run only on macOS with Python 3.15; Windows and Linux are untested. The only optional extra is `pdftotext` (poppler), used to extract PDF text. Without it, PDF cleaning is refused and nothing is written.
+
+Ask in the assistant:
+
+```text
+/human clean notes.docx            # detect and remove invisible characters, new file notes.clean.docx
+/human clean: <pasted text>        # same for pasted text
+/human metadata photo.jpg          # inspect and explain; removal only after you say which blocks
+```
+
+or run the scripts yourself from `skills/human/`:
+
+```bash
+python3 scripts/text_clean.py scan  draft.txt            # report only
+python3 scripts/text_clean.py clean draft.txt            # writes draft.clean.txt
+python3 scripts/file_clean.py report.docx --scan         # what would change in a file
+python3 scripts/file_clean.py report.docx                # writes report.clean.docx
+python3 scripts/metadata_inspect.py inspect photo.jpg    # read-only
+python3 scripts/metadata_inspect.py strip photo.jpg --only exif,xmp           # dry run: prints the plan
+python3 scripts/metadata_inspect.py strip photo.jpg --only exif,xmp --confirm # writes photo.nometa.jpg
+```
+
+**What Clean does.** Removes zero-width characters, soft hyphens, blank filler characters, hidden Unicode tag characters and control characters; replaces odd spaces and line separators with plain ones; removes direction marks and controls in left-to-right text. It keeps what is legitimate in context and reports it as kept: joiners inside emoji sequences and Persian or Indic scripts, direction marks inside right-to-left text, and the non-breaking spaces of French typography and digit grouping. After every run it proves that the visible characters are identical to the original and stops without writing if they are not. Code (fenced blocks and inline code in Markdown; `<pre>`, `<code>`, `<script>`, `<style>`, tags, attributes and comments in HTML) is never modified, and hidden characters found there are reported.
+
+**File support, as actually implemented:**
+
+| Format | Clean | Metadata inspect | Metadata strip |
+|---|---|---|---|
+| TXT, Markdown | yes (new file; Markdown code protected) | n/a (no embedded fields) | n/a |
+| HTML | text nodes only, rest byte-identical | `<meta>`, author link, comments | no |
+| DOCX | text runs of body, headers, footers, notes, comments; other package parts copied unchanged; refused if signed | core/app/custom properties, reviewer names | people, organization, descriptive fields (whole blocks) |
+| XLSX, PPTX | no | same property parser | same |
+| PDF | text extracted with `pdftotext` to a new `.txt` (layout lost, PDF not rewritten) | Info dictionary, XMP, signatures, revisions | no |
+| JPEG | no text layer | EXIF (incl. GPS and serials), XMP, IPTC, comments, C2PA marker | exif, xmp, iptc, comment (keeps pixels, colour profile and orientation) |
+| PNG | no text layer | text chunks, XMP, EXIF, timestamp, C2PA marker | text, exif, time |
+| WebP | no | EXIF, XMP, C2PA marker | no |
+| Anything else | refused | marker search only (proves nothing about absence) | no |
+
+**Rules the scripts enforce.** The original is never modified or overwritten, and an existing output file is never replaced. `strip` is a dry run unless `--confirm` is given. C2PA content credentials and digital signatures are only detected, never validated and never removed; a file that has them is not stripped unless you add `--break-provenance`, and even then the credentials stay in the file and simply stop validating. This is for legitimate cleaning and privacy, not for disguising where content came from, and it says nothing about AI detectors.
+
+**Limits.** Metadata inspection reports only what it parsed, and every report lists what was not checked (for example vendor MakerNote contents, images embedded inside documents, objects inside compressed PDF streams, signature validity). A clean report does not prove that a file has no hidden marks. Images are not OCR'd. Tracked-change author names in DOCX are reported but not rewritten. Blocks are removed whole, so a copyright line stored in them goes too.
+
 ## What the skill changes
 
 - **Punctuation:** replaces em dashes and stacked punctuation where a comma, period, colon, or parenthesis reads better. It keeps dashes that are part of the author's style or that mark ranges.
@@ -125,6 +174,9 @@ python3 tests/style_report.py                   # coarse report on sentence rhyt
 python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
 python3 tests/test_check_outputs.py             # checker regression tests (Unicode normalization, clean failures)
 python3 tests/test_style_report.py              # style_report.py regression test (empty vs. missing recorded file)
+python3 tests/test_text_clean.py                # Text Cleaner: Unicode categories, context rules, many languages, CLI
+python3 tests/test_file_clean.py                # File Cleaner: TXT/MD/HTML/DOCX/PDF, refusals, no overwrite
+python3 tests/test_metadata.py                  # Metadata Inspector: EXIF/XMP/PNG/Office/PDF, consent gate, C2PA preserved
 ```
 
 - `tests/inputs/` holds sixteen representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian.
@@ -135,6 +187,8 @@ python3 tests/test_style_report.py              # style_report.py regression tes
 - `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, a symlinked *individual file* being refused rather than silently replaced, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
 - `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
+- `tests/test_text_clean.py`, `tests/test_file_clean.py` and `tests/test_metadata.py` test the technical modes. Sample files (JPEG with EXIF/GPS/XMP/IPTC/C2PA, PNG, DOCX, PDF) are assembled in memory by `tests/_fixtures.py`, so no binary files are stored. The PDF extraction test is skipped when `pdftotext` is not installed. They cover: each invisible-character category; the context rules that keep legitimate characters; a randomized check that visible text never changes; protected code; thirteen languages and scripts; Unicode and spaced file paths; DOCX packages staying byte-identical outside the text; the consent gate; C2PA and signatures preserved; image data, colour profile and orientation preserved; honest "not checked" reporting; and clean failures on corrupt, truncated, oversized or unsupported input.
+
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
 ## Repository layout
@@ -143,12 +197,13 @@ The checker verifies the claims and facts it was told to look for. It does not r
 plugin.json                       portable ChatGPT/Codex plugin manifest
 skills/human/SKILL.md             the slash-command skill
 skills/human/VERSION              local package version, read by the update scripts
-skills/human/scripts/             check_update.py, apply_update.py, and their shared _update_lib.py (skill form only)
+skills/human/scripts/             check_update.py, apply_update.py, _update_lib.py (updater); text_clean.py, file_clean.py,
+                                  metadata_inspect.py with their libraries _clean_lib.py and _meta_lib.py (skill form only)
 adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions (no update mechanism)
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
 examples/evaluation.md            nine cases with what should and must not change
-tests/                            inputs, recorded outputs, expectations, checker, style report, update tests
+tests/                            inputs, recorded outputs, expectations, checker, style report, update tests, technical-mode tests
 README.md, CHANGELOG.md, LICENSE, .gitignore
 ```
 
