@@ -2,7 +2,7 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
-## Unreleased
+## 2.2.0 (2026-10-29)
 
 ### Added
 - **Clean** operation (`scripts/text_clean.py`, `scripts/file_clean.py`): finds and removes invisible or anomalous Unicode (zero-width characters, soft hyphens, blank fillers, hidden tag characters, control characters, odd spaces and line separators, direction marks in left-to-right text) and reports every change. Keeps legitimate uses in context (emoji, Persian and Indic joiners, direction marks in right-to-left text, French non-breaking spaces) and reports them as kept. A built-in check proves the visible characters are unchanged. Works on pasted text and TXT, Markdown, HTML and DOCX files, and extracts and cleans PDF text through `pdftotext` when installed. Code regions are never modified.
