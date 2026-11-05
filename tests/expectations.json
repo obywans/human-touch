@@ -101,7 +101,9 @@
         ["critic"],
         ["expectations"],
         ["onboarding"],
-        ["choices"]
+        ["choices"],
+        ["broader shift", "wider shift", "broader change", "wider change"],
+        ["policy"]
       ]
     },
     "06-generic-ai-fr": {
@@ -269,6 +271,63 @@
         ["pocos usuarios", "pocos"],
         ["memoria"],
         ["config/sesiones.yml"]
+      ]
+    },
+    "17-numbers-logic-en": {
+      "must_keep": ["The single most important", "14 August", "shipped 3 features and fixed 12 bugs", "decreased 20%", "because", "over 3,000", "only after", "although", "4%"],
+      "must_not": ["pivotal"],
+      "claims": [
+        ["billing module"],
+        ["at least two"],
+        ["annual plan"],
+        ["September"],
+        ["quarter"]
+      ]
+    },
+    "18-warning-symbols-en": {
+      "must_keep": ["❌ Do not tilt your head back", "⚠️", "10 minutes", "20 minutes"],
+      "must_not": [],
+      "claims": [
+        ["nosebleed"],
+        ["lean forward"],
+        ["pinch"],
+        ["soft part"],
+        ["calm"],
+        ["first aid"]
+      ]
+    },
+    "19-quotes-es": {
+      "must_keep": ["Sra. Ruiz", "3 de marzo", "«El proyecto avanza según lo previsto, aunque el presupuesto es ajustado»", "¿Podría confirmar", "¡Gracias de antemano!", "Marta Gil"],
+      "must_not": [],
+      "claims": [
+        ["comité"],
+        ["aprobó"],
+        ["reunión"],
+        ["viernes"]
+      ]
+    },
+    "20-honorific-ro": {
+      "must_keep": ["Stimate domnule Nicola Ardeleanu", "18 noiembrie", "2.300 de lei", "Ioana Matei"],
+      "must_not": ["De asemenea", "doamnă", "doamna", "Stimată"],
+      "claims": [
+        ["livrarea"],
+        ["confirmat"],
+        ["factura"],
+        ["ieri"],
+        ["e-mail"]
+      ]
+    },
+    "21-plain-translation-en": {
+      "must_keep": ["2 March", "CRM", "support desk", "finance"],
+      "must_not": ["home stretch", "in the pipeline", "iron out", "kinks", "roll it out", "across the board", "no hard feelings", "ping the"],
+      "claims": [
+        ["almost finished", "nearly finished", "almost complete", "nearly complete", "almost done", "final stage", "last stage"],
+        ["dashboard"],
+        ["not yet approved", "not approved yet", "has not approved", "still waiting", "still pending"],
+        ["customer data"],
+        ["all users", "every user", "everyone"],
+        ["layout"],
+        ["that is fine", "that's fine", "no problem", "not be offended", "won't be offended", "that is okay", "that's okay"]
       ]
     }
   }

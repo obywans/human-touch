@@ -2,10 +2,40 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
-## Unreleased
+## 2.3.0 (2026-11-05)
+
+These changes come from failures that users reported for similar humanizer skills and tools (the GitHub issues listed under "Sources"), checked against this skill's own rules, examples and tests.
+
+### Added
+- **Plain mode** (`/human plain: <text>`), on request only, for readers who use machine translation or read the language as a second language: one idea per sentence, common literal words, no idioms or phrasal verbs, the same term for the same thing, acronyms spelled out once, explicit subjects, no long noun chains. It keeps the language, the register and every fact.
+- Five test cases built so that the reported failures would fail the checker: `17-numbers-logic-en` (numbers with units, signs and qualifiers; "single most important", "only", "at least", "because", "although"), `18-warning-symbols-en` (❌ and ⚠️ kept), `19-quotes-es` (« » and ¿ ¡ kept, the quotation untouched), `20-honorific-ro` (an honorific kept as written with an ambiguous first name) and `21-plain-translation-en` (idioms replaced in Plain mode). Their recorded outputs, like the new recording of `05-long-form-en`, are single runs of the 2.3.0 skill made from the rules and the input alone. Output varies between runs.
+- `tests/make_examples.py` builds `examples/before-after.md` from the recordings, and `python3 tests/make_examples.py --check` fails when the page and the recordings differ.
 
 ### Changed
-- SKILL.md hard rules: the skill never changes or guesses the gender, honorific or pronouns of a named person; when the gender is not established it keeps the text as written and flags it in the `Notes:` line.
+- Claims now include their polarity, ranking and scope words and the logical links between them, and numbers stay bound to their unit, sign, qualifier and role, in order (step 2 and the self-check).
+- No invented specifics: a new number, date, name, place, quote, anecdote or specific noun counts as an added claim.
+- Triage before editing: few patterns means few edits, and "no change needed" is a valid result.
+- Over-editing: no synonym swaps in sentences that already read well, no rarer or more formal synonyms, and no new fragments, dropped subjects or casualness.
+- Symbols and emphasis that carry meaning (❌, ✅, ⚠️, warnings) are kept, or their meaning is put into words.
+- Languages: each language keeps its punctuation and quotation marks, and quotations are never edited. A language without dedicated notes gets only the edits that can be judged with certainty in it, not the English word lists, and the `Notes:` line says so.
+- Precise technical, legal and scientific terms and real hedges are kept.
+- File input: the whole file is read every time and never rewritten from memory. A result requested as a file is a new file, and its code, front matter and link targets are checked afterwards.
+- Output: prose is not hard-wrapped, intentional line breaks (greetings, sign-offs, addresses, lists, verse, chat) stay, and no blockquote or code fence is added.
+- Self-check: four new items (numbers and logic words; paragraph coverage and length within about 15%; symbols, quotes, links, Markdown and code; no new habit).
+- Gender and forms of address: the skill never changes or guesses the gender, honorific or pronouns of a named person. When the gender is not established, it keeps the text as written and flags it in the `Notes:` line.
+- Portable adapters (`shared`, Gemini, local Qwen, ChatGPT Custom Instructions) and the block in `docs/always-on.md` carry the same new rules in short form.
+
+### Fixed
+- `examples/before-after.md` showed older runs that no longer matched `tests/recorded/`: one "after" text added a claim the source did not make ("consistency is what makes the updates believable"), and another changed a text that was already natural. The page is now generated from the recordings.
+- `05-long-form-en`: the previous recording dropped two claims (the broader shifts in how work is organized, and the need for policy design), and the checker did not notice. The expectations now require both, and the case was re-recorded.
+
+### Sources
+- blader/humanizer issues #78, #93, #146, #172, #187, #212, #238, #306, #326: https://github.com/blader/humanizer/issues
+- hardikpandya/stop-slop issues #15, #42, #56: https://github.com/hardikpandya/stop-slop/issues
+- devswha/patina issues #870, #872, #882: https://github.com/devswha/patina/issues
+- Nanako0129/sepia issue #286: https://github.com/Nanako0129/sepia/issues/286
+- op7418/Humanizer-zh issues #11, #41: https://github.com/op7418/Humanizer-zh/issues
+- epoko77-ai/im-not-ai issue #74: https://github.com/epoko77-ai/im-not-ai/issues/74
 
 ## 2.2.0 (2026-10-29)
 

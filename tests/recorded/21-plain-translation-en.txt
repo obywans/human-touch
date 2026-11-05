@@ -1,0 +1,3 @@
+We're in the final stage of the CRM (customer relationship management) migration. The new reporting dashboard is being developed. Once we fix the small problems, we'll make the dashboard available to everyone on 2 March. The project plan for migrating customer data is still waiting for approval from the finance department. If the new layout doesn't fit your workflow, just contact the support desk. We won't be offended.
+
+Notes: The text does not say whether "the new layout" is the layout of the dashboard or of the CRM, so I kept it as written. Stating which one would help readers who use machine translation.
