@@ -2,6 +2,11 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## Unreleased
+
+### Changed
+- SKILL.md hard rules: the skill never changes or guesses the gender, honorific or pronouns of a named person; when the gender is not established it keeps the text as written and flags it in the `Notes:` line.
+
 ## 2.2.0 (2026-10-29)
 
 ### Added
