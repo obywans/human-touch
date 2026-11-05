@@ -65,7 +65,7 @@ Type `/human` followed by the text where slash skills are supported, or ask the 
 /human hey! so i finally finished the report, it was kind of a nightmare but i think it turned out pretty good.
 ```
 
-You can also pass a path to a text file. The assistant reads the file and shows the rewrite in the reply. It does not overwrite the file:
+You can also pass a path to a text file. The assistant reads the whole file every time (never a remembered version) and shows the rewrite in the reply. It does not overwrite the file; if you ask for a file, it writes a new one next to the original:
 
 ```text
 /human notes/draft-email.txt
@@ -79,6 +79,7 @@ Choose a mode when useful:
 
 - `/human code-safe rewrite: <text>` edits the prose while keeping code blocks, inline code, commands, identifiers, URLs, and configuration values unchanged.
 - `/human source review: <draft and references>` checks claims against the references you provide and reports unsupported claims or citation gaps. It does not invent sources.
+- `/human plain: <text>` rewrites for readers who will use machine translation or read the language as a second language: one idea per sentence, common literal words, no idioms, the same term for the same thing, acronyms spelled out once. It keeps the language; it is not a translation.
 
 For copied material, HumanTouch can help you write an original explanation from your own understanding, retain quotations, and cite sources. It cannot make copied ideas original by rewording them.
 
@@ -160,6 +161,7 @@ See [`examples/before-after.md`](examples/before-after.md) for five before/after
 - It cannot learn your personal voice from a few sentences. Each rewrite follows the register of the text you give it.
 - It can remove a hedge or a qualifier that you meant. Check the rewrite where precision matters, such as legal, medical, or financial text.
 - It does not know your audience unless the text tells it.
+- Plain mode makes a text easier for translation tools to handle. It cannot control how a given tool translates a sentence, so check important translations.
 - It can make a text's rhythm more uniform, not less, in some runs. `tests/style_report.py` on the recorded 1.1.0 outputs shows a few cases where sentence-length variety went down after rewriting, which is the opposite of the "allow short, medium and long sentences" rule. This is a known limitation, not something the checker catches.
 - The "always on" instructions in `docs/always-on.md` are guidance the assistant follows, not a guarantee. Check important texts before you send them, the same as with `/human` itself.
 
@@ -168,7 +170,7 @@ See [`examples/before-after.md`](examples/before-after.md) for five before/after
 The tests check the behavior that matters: keeping the facts and the language, and removing the patterns. They do not measure how natural the text sounds, because that needs a human reader.
 
 ```bash
-python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 16/16 pass
+python3 tests/check_outputs.py tests/recorded   # rewritten outputs: expect 21/21 pass
 python3 tests/check_outputs.py tests/inputs     # original texts: expect failures where patterns exist
 python3 tests/style_report.py                   # coarse report on sentence rhythm and voice convergence
 python3 tests/test_update.py                    # auto-update logic: expect all tests to pass, no network used
@@ -177,13 +179,15 @@ python3 tests/test_style_report.py              # style_report.py regression tes
 python3 tests/test_text_clean.py                # Text Cleaner: Unicode categories, context rules, many languages, CLI
 python3 tests/test_file_clean.py                # File Cleaner: TXT/MD/HTML/DOCX/PDF, refusals, no overwrite
 python3 tests/test_metadata.py                  # Metadata Inspector: EXIF/XMP/PNG/Office/PDF, consent gate, C2PA preserved
+python3 tests/make_examples.py --check          # examples page matches the recorded outputs
 ```
 
-- `tests/inputs/` holds sixteen representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian.
-- `tests/recorded/` holds the outputs of `/human` on those inputs, one run per case with the current skill.
+- `tests/inputs/` holds twenty-one representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian. Five more (17 to 21) were added in 2.3.0 for failures reported for similar tools: numbers with their units and logic words, warning symbols, Spanish quotation marks, a Romanian honorific with an ambiguous first name, and Plain mode.
+- `tests/recorded/` holds the outputs of `/human` on those inputs, one run per case. Cases 05 and 17 to 21 were recorded with 2.3.0, the others with earlier versions.
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
 - `tests/check_outputs.py` checks each output against those expectations. It ignores the `Notes:` line.
-- `tests/style_report.py` reports sentence-length patterns per case, and whether the sixteen outputs are, on average, more similar to each other than the sixteen inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
+- `tests/make_examples.py` builds `examples/before-after.md` from the first five cases, so the page shows the recorded text; `--check` fails if the page is out of date.
+- `tests/style_report.py` reports sentence-length patterns per case, and whether the outputs are, on average, more similar to each other than the inputs were. That is the closest thing here to checking "does everything end up sounding like the same person", and it is a coarse proxy, not a validated measure.
 - `tests/test_update.py` tests the auto-update system (see "Auto-update" above) against: the installed version equal to or behind the latest, GitHub being unreachable, GitHub returning something unusable, a failed update leaving files untouched, a git install from an official remote vs. a fork, a plain copy install, a symlinked install, a symlinked *individual file* being refused rather than silently replaced, and recovery after a failed attempt. Every network call is mocked, so it runs offline and never touches the real GitHub API.
 - `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
@@ -203,7 +207,7 @@ adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
 examples/evaluation.md            nine cases with what should and must not change
-tests/                            inputs, recorded outputs, expectations, checker, style report, update tests, technical-mode tests
+tests/                            inputs, recorded outputs, expectations, checker, examples-page generator, style report, update tests, technical-mode tests
 README.md, CHANGELOG.md, LICENSE, .gitignore
 ```
 

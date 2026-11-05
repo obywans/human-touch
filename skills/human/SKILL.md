@@ -1,7 +1,7 @@
 ---
 name: human
-description: Improves natural prose while preserving meaning, facts, language, voice, code and source attribution. Can also review citations against sources the user provides, clean invisible Unicode characters from text and files, and inspect file metadata (removing it only with explicit consent). Does not evade AI detectors or disguise plagiarism or provenance. Invoke with /human or when the user asks for these writing-quality, cleaning, metadata or source-review tasks.
-argument-hint: "[clean | metadata | rewrite | source review] [text, or path to a file]"
+description: Improves natural prose while preserving meaning, facts, language, voice, code and source attribution. Can also write a plain-language version for readers who use machine translation (on request), review citations against sources the user provides, clean invisible Unicode characters from text and files, and inspect file metadata (removing it only with explicit consent). Does not evade AI detectors or disguise plagiarism or provenance. Invoke with /human or when the user asks for these writing-quality, cleaning, metadata or source-review tasks.
+argument-hint: "[clean | metadata | rewrite | plain | source review] [text, or path to a file]"
 ---
 
 # HumanTouch
@@ -14,13 +14,14 @@ Available modes:
 - **Rewrite** (default): improve prose under the rules below.
 - **Code-safe rewrite**: improve prose around technical material while keeping every fenced code block, inline code span, command, identifier, URL, and configuration value byte-for-byte unchanged. If a passage mixes code and prose and the boundaries are unclear, ask before editing it.
 - **Source review**: inspect a draft and sources supplied by the user. Match claims to the provided sources, identify unsupported claims and missing or mismatched citations, and suggest where attribution is needed. Do not invent references, claim to have verified sources that were not supplied or accessible, or silently remove attribution. Return findings separately from the draft; do not rewrite the draft unless asked.
+- **Plain** (only when asked, for example `/human plain: <text>`): Rewrite plus the rules in "Plain mode", for readers who will read the text through machine translation or in a second language. It keeps the source language; it is not a translation.
 
 - **Clean** (technical cleaning): find and remove invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in pasted text or in a TXT, Markdown, HTML or DOCX file; for a PDF, extract its text and clean that. It never changes wording. See "Technical modes".
 - **Metadata**: inspect what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explain it, and remove it only after explicit consent. It never changes wording or text. See "Technical modes".
 
 These are separate operations. Each does only what its name says: Clean never rewrites, Rewrite never touches metadata, and inspecting never changes a file. No operation modifies or overwrites an original file; results are always new files. Nothing destructive happens silently: say what will change and what changed.
 
-Examples: `/human code-safe rewrite: <text>`, `/human source review: <draft and references>`, `/human clean notes.docx`, `/human metadata photo.jpg`.
+Examples: `/human code-safe rewrite: <text>`, `/human plain: <text>`, `/human source review: <draft and references>`, `/human clean notes.docx`, `/human metadata photo.jpg`.
 
 If asked to remove plagiarism, disguise copied work, bypass an AI detector, or guarantee a detector result, do not perform that operation. Offer a transparent alternative: help write an original explanation from the user's own understanding, preserve quotations, and cite the sources they provide. Never claim that a paraphrase makes copied ideas original.
 
@@ -70,7 +71,7 @@ Before rewriting text or a text file, run `text_clean.py scan` on it (with `--pr
 ## 1. Read the input
 
 - If $ARGUMENTS is empty, ask the user for the text and stop.
-- If $ARGUMENTS is the path to an existing text file, read it. Show the rewrite in the reply. Do not overwrite the file unless the user asks.
+- If $ARGUMENTS is the path to an existing text file, read the whole file now, even if you wrote or saw it earlier in the conversation. Never rewrite a file from memory. Show the rewrite in the reply. If the user wants the result as a file, write a new file next to the original (`NAME.human.EXT`); overwrite the original only if the user explicitly asks. After writing, check that code blocks, front matter (the block between `---` lines at the top) and link targets are byte-for-byte the same as in the original.
 - Otherwise treat $ARGUMENTS as the text itself.
 
 For Clean and Metadata, follow "Technical modes" below instead of steps 2 to 7.
@@ -89,13 +90,16 @@ Before rewriting, note internally:
 - **Register.** Casual chat, professional email, report, academic, marketing, or narrative.
 - **Facts and specifics.** Every number, date, name, place, quote, URL, code, identifier, version, price, and legal or technical term.
 - **Required terminology.** Terms the author uses on purpose, even if they look repetitive.
-- **Every claim.** Each point the text makes. Do not add claims, and do not drop any. Before rewriting, list the claims of the source, one per line, as your own working notes. Never print this list, or any other planning, in the reply — only the final rewrite goes in the output. Keeping a claim means keeping its content, not its exact wording: a claim stated with filler or corporate framing (for example "that is a significant development") can lose the framing as long as the underlying point survives elsewhere in the text.
+- **Every claim.** Each point the text makes. Do not add claims, and do not drop any. Before rewriting, list the claims of the source, one per line, as your own working notes. Never print this list, or any other planning, in the reply — only the final rewrite goes in the output. Keeping a claim means keeping its content, not its exact wording: a claim stated with filler or corporate framing (for example "that is a significant development") can lose the framing as long as the underlying point survives elsewhere in the text. A claim includes its polarity (rose or fell, does or does not), its ranking and scope ("the single most important", "only", "at least", "all", "most", "never") and the logical links between claims ("because", "so", "therefore", "although", "unless", "simultaneously"). These words are part of the claim, not filler.
+- **Numbers in their roles.** Each number keeps its unit, its sign, its qualifier ("over", "about", "up to", "at least") and the thing it counts: "shipped 3 features and fixed 12 bugs" must not become "12 features and 3 bugs". Repeated numbers stay separate and in their order ("10, and later another 10" is not "10").
 
-Detect the source language first, then apply the matching notes in the Languages section. For any language not listed there, use only the general rules in section 3. Do not force English phrases onto other languages.
+Detect the source language first, then apply the matching notes in the Languages section. For a language that is not listed there, do not apply the English word lists: make only the edits you can judge with certainty in that language (repetition, padding, stacked connectors), and say in the `Notes:` line that this language has no dedicated rules here. Do not force English phrases onto other languages.
 
 ## Languages
 
 These notes are starting points, not complete lists. Apply them only where the text actually shows the pattern.
+
+In every language, keep its punctuation and quotation marks as written: « » (French, Spanish, Romanian), „ ” (Romanian), „ “ (German), ¿ ¡ (Spanish), 「」 (Japanese, traditional Chinese), and the space before `: ; ! ?` in French. Never convert one style of quotation marks into another, and never edit the words inside a quotation.
 
 ### English
 
@@ -124,6 +128,8 @@ Use the general lists in section 3.
 
 ## 3. Remove the artificial patterns
 
+First, triage: count how many of the patterns below actually occur. If there are none, change nothing; if there are only one or two, fix only those. "No change needed" is a valid result; say so in the `Notes:` line.
+
 Fix these where they occur. Not every instance is a problem. Fix the ones that make the text sound generated.
 
 - **Dashes and punctuation.** Replace em dashes and stacked punctuation with commas, periods, colons, or parentheses where that reads better. Keep dashes that are the author's habit or that mark ranges, lists, or numbers.
@@ -133,12 +139,13 @@ Fix these where they occur. Not every instance is a problem. Fix the ones that m
 - **Unnecessary structure.** Headings, bullets, and bold in short text where a paragraph would do. Keep structure the content needs.
 - **Reflexive triads and contrasts.** "Not just X, but Y", "It's not about X, it's about Y", and lists of three where two or four items fit the content.
 - **Vague claims.** "Many experts agree", "significant benefits", "a wide range of". If the source gives no specifics, keep the claim as vague as the source is. Do not invent specifics. Mention the gap in the Notes line.
-- **Excess hedging.** Stacks such as "may potentially be able to". Keep the hedges that reflect real uncertainty.
-- **Inflated vocabulary.** "crucial", "pivotal", "vital", "robust", "seamless", "comprehensive", "leverage", "delve", "tapestry", "landscape", "foster", "underscore", "showcase", "testament", "groundbreaking", "vibrant", "embark". Use plainer words of the same strength, or repeat a precise word rather than rotating synonyms. For example, "crucial" becomes "essential" or "key", and "cornerstone" becomes "foundation". Replacing a word with a plainer word of the same strength is not weakening the claim.
+- **Excess hedging.** Stacks such as "may potentially be able to". Keep the hedges that reflect real uncertainty or scope ("may", "about", "reportedly", "according to", "we believe", "in most cases") and the qualifiers that legal, medical, financial or scientific text needs. Cut only stacked or empty hedging.
+- **Inflated vocabulary.** "crucial", "pivotal", "vital", "robust", "seamless", "comprehensive", "leverage", "delve", "tapestry", "landscape", "foster", "underscore", "showcase", "testament", "groundbreaking", "vibrant", "embark". Use plainer words of the same strength, or repeat a precise word rather than rotating synonyms. For example, "crucial" becomes "essential" or "key", and "cornerstone" becomes "foundation". Replacing a word with a plainer word of the same strength is not weakening the claim. A word that is a precise term in its field stays (a defined term, a product or standard name, "robust regression" in statistics); the list is about the same words used as general praise. Never replace a word with a rarer, longer or more formal synonym.
 - **Repeated adjectives and adverbs.** Keep one good word and drop the rest.
 - **Uniform rhythm.** Sentences of the same length and paragraphs of the same size. Vary them naturally, following the content.
 - **Over-explanation.** Explanations of things the reader already knows, and recaps of what was just said.
 - **Marketing polish.** Empty superlatives and brochure phrasing in text that should sound direct.
+- **Symbols and emphasis that carry meaning are content, not decoration.** Keep ❌, ✅, ⚠️, "do not" markers, bold or capitals on warnings, and icon or legend systems. If a symbol has to go, put its meaning into words ("❌ Tilt your head back" becomes "Do not tilt your head back").
 
 ## 4. Adapt to the register
 
@@ -157,6 +164,18 @@ Never make a formal text informal. Never make an informal text stiff. Never make
 
 When a row above conflicts with a general rule in section 3 (for example, WhatsApp's "do not fix punctuation habits" versus section 3's "replace stacked punctuation"), the row for the actual register wins for that text.
 
+## Plain mode (only when asked)
+
+For readers who will read the text through machine translation or in a second language. Apply these on top of every other rule. In this mode, each item below also counts as a pattern to fix, like those in section 3:
+
+- One idea per sentence. Keep most sentences under about 20 words.
+- Use common, literal words. Replace idioms, phrasal verbs, metaphors and culture-specific references with their plain meaning ("in the pipeline" becomes "being developed", "iron out the problems" becomes "fix the problems").
+- Use the same term for the same thing every time. Translation tools translate each variant differently.
+- Spell out an acronym the first time it appears, unless the short form is better known than the long one.
+- Keep subjects and verbs explicit. Avoid "it", "this" or "they" when two nouns could match.
+- Break long chains of nouns ("customer data migration project plan" becomes "the plan for migrating customer data").
+- Plain is not informal: keep the register, every fact and every claim. Plain mode does not translate; the text stays in its language.
+
 ## Voice
 
 The rewrite must still sound like the same author.
@@ -167,16 +186,16 @@ The rewrite must still sound like the same author.
 
 ## Over-editing
 
-- Change only what makes the text sound generated. If a sentence already reads well, leave it.
+- Change only what makes the text sound generated. If a sentence already reads well, leave it: swapping in a synonym is not an improvement.
 - Do not add transitions between paragraphs just to connect them.
-- Do not add a new pattern of your own. Short "punchy" sentences used as a device ("Simple. Clean. Effective.") are a template too.
+- Do not add a new pattern of your own. Short "punchy" sentences used as a device ("Simple. Clean. Effective.") are a template too. Do not turn full sentences into fragments, drop subjects, or add contractions, slang or casualness the source does not have, and do not repeat a new pet phrase through the text.
 - Do not add headings, numbered points or a summary the source does not have.
 - Do not use semicolons or dashes to look less generated. Use them only where the author would.
 
 ## 5. Hard rules
 
 - Do not change facts, figures, names, dates, quotes, code, URLs, or required terms.
-- Do not add claims, examples, citations, or sources that are not in the input.
+- Do not add claims, examples, citations, or sources that are not in the input. This includes details that only sound plausible: a new number, date, name, place, quote, anecdote or specific noun ("an interview", "one engineer told me"). If a sentence seems to need a detail the source does not give, keep it general and mention the gap in the `Notes:` line.
 - Keep the strength of the author's claims and praise. Do not soften a word such as "exemplary", "remarkable" or "exceptional" into a weaker word such as "good". Removing filler is allowed; weakening a judgment is not. In translation, use the equivalent word with the same strength.
 - Do not add typos, grammar errors, or fake imperfections on purpose.
 - Do not add slang, emojis, or jokes the author did not write.
@@ -195,10 +214,16 @@ Confirm all of these. If one fails, fix it:
 4. The tone matches the register in step 4.
 5. The rewrite contains no em-dash habit, filler opener, or canned transition that the input did not need.
 6. There are no new grammar or spelling errors.
+7. Numbers keep their units, signs, qualifiers and roles, in the same order, and no ranking, scope word or logical link ("only", "at least", "most", "because", "although") was dropped.
+8. Every paragraph of the source has a counterpart, and the length is within about 15% of the source unless the only cuts were filler. If not, say why in the `Notes:` line.
+9. Symbols and emphasis that carry meaning, quotation marks, links, Markdown structure and code are intact.
+10. No new habit: no run of short fragments, no phrase repeated through the text, no casualness the source lacks. In Plain mode, also check every rule in "Plain mode".
 
 ## 7. Output format
 
 Return only the rewritten text, unless the user asked for an explanation. Never include your claim list, register notes, or any other planning in the reply — that work stays internal.
+
+Do not hard-wrap prose at a fixed width: each paragraph stays on one line. Keep the line breaks the source uses on purpose (greetings, sign-offs, addresses, lists, verse, chat messages). Do not wrap the text in a blockquote or a code fence unless the source was written that way.
 
 If the user asked what changed, add a short bulleted list of changes after the text.
 
