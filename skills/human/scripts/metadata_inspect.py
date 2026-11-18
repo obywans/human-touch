@@ -11,10 +11,11 @@ inspect   Read-only. Lists the metadata found (EXIF, XMP, IPTC, PNG text,
           field, and states what was NOT checked.
 strip     Writes a NEW file without the chosen metadata blocks; the original is
           never modified. Without --confirm it only prints the plan and writes
-          nothing. Supported: JPEG, PNG, DOCX/XLSX/PPTX.
+          nothing. Supported: JPEG, PNG, DOCX/XLSX/PPTX, PDF.
           Blocks are removed whole (not tag by tag). JPEG: exif, xmp, iptc,
           comment. PNG: text, exif, time. Office: people, organization,
-          descriptive. Default: every block the file has except C2PA.
+          descriptive. PDF: info, xmp (overwritten in place; the file length
+          does not change). Default: every block the file has except C2PA.
 
 C2PA content credentials and digital signatures are never removed by this
 tool. If the file has them, strip refuses, because changing the file would
@@ -68,6 +69,10 @@ def main(argv=None) -> int:
               "Nothing was written.", file=sys.stderr)
         return 2
 
+    if ins.get("strip_refusal"):
+        print(f"REFUSED: {ins['strip_refusal']}. Nothing was written.", file=sys.stderr)
+        return 2
+
     prov = ins["provenance"]
     has_prov = prov["c2pa"] is True or bool(prov["signatures"])
     available = {b for b, n in ins["blocks"].items() if n and b != "c2pa"}
@@ -111,6 +116,9 @@ def main(argv=None) -> int:
         out = lib.pick_output_path(args.path, ".nometa", args.output, ext)
         after = meta.detect_and_inspect(out, new_data)  # verify before anything is written
         lib.write_new_file(out, new_data)
+    except meta.StripRefused as exc:
+        print(f"REFUSED: {exc}. Nothing was written.", file=sys.stderr)
+        return 2
     except (OSError, ValueError) as exc:
         print(f"error: {exc}. Nothing was written.", file=sys.stderr)
         return 1

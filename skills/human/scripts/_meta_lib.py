@@ -637,48 +637,192 @@ def _pdf_string(raw):
 PDF_INFO = {"Title": "description", "Author": "identity", "Subject": "description", "Keywords": "description",
             "Creator": "software", "Producer": "software", "CreationDate": "time", "ModDate": "time"}
 
+PDF_NOT_CHECKED = ("page content, embedded images, fonts and objects inside compressed object streams "
+                   "are not changed or checked")
+PDF_STRIP_NOTE = ("Removal works for the Info dictionary and for an XMP packet that is stored uncompressed. "
+                  "Objects inside compressed object streams are not changed.")
+_XMP_EMPTY = b'<x:xmpmeta xmlns:x="adobe:ns:meta/"></x:xmpmeta>'
+_XPACKET = re.compile(rb"(<\?xpacket begin[^>]*\?>)(.*?)(<\?xpacket end[^>]*\?>)", re.DOTALL)
+
+
+class StripRefused(ValueError):
+    """The tool refuses to change this file (exit code 2 in the command line)."""
+
+
+def _pdf_literal_end(data, i):
+    """Return the index after the literal string that starts at data[i] == '('. Tracks nesting and escapes."""
+    depth, n = 0, len(data)
+    while i < n:
+        c = data[i]
+        if c == 0x5C:  # backslash: skip the escaped byte
+            i += 2
+            continue
+        if c == 0x28:
+            depth += 1
+        elif c == 0x29:
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise ValueError("unterminated string in a PDF object")
+
+
+def _pdf_string_spans(data, start):
+    """List the strings of the object whose body starts at `start`: (key, begin, end) up to endobj or stream."""
+    out, i, n, key = [], start, len(data), None
+    while i < n:
+        if data.startswith(b"endobj", i) or data.startswith(b"stream", i):
+            break
+        c = data[i]
+        if c == 0x2F:  # name
+            m = re.compile(rb"/([^\s/<>\[\]()%]*)").match(data, i)
+            key, i = m.group(1).decode("latin-1"), m.end()
+        elif c == 0x28:
+            e = _pdf_literal_end(data, i)
+            out.append((key, i, e))
+            i = e
+        elif c == 0x3C and data[i + 1:i + 2] == b"<":
+            i += 2
+        elif c == 0x3C:
+            e = data.find(b">", i)
+            if e < 0:
+                raise ValueError("unterminated hexadecimal string in a PDF object")
+            out.append((key, i, e + 1))
+            i = e + 1
+        elif c == 0x25:  # comment
+            e = re.compile(rb"[\r\n]").search(data, i)
+            i = e.start() if e else n
+        else:
+            i += 1
+    return out
+
+
+def _pdf_info_copies(data):
+    """Return (refs, copies): every /Info reference, and the body start of every copy of each referenced object."""
+    refs = sorted(set(re.findall(rb"/Info\s+(\d+)\s+(\d+)\s+R", data)))
+    copies = []
+    for num, gen in refs:
+        for m in re.finditer(rb"(?<![\d])" + num + rb"\s+" + gen + rb"\s+obj\b\s*(?=<<)", data):
+            copies.append(m.end())
+    return refs, copies
+
+
+def _pdf_is_empty(tok):
+    return not tok[1:-1].strip() if tok[:1] == b"<" else tok == b"()"
+
+
+def _pdf_xmp_packets(data):
+    """Return (begin_end, inner_start, inner_end) of each uncompressed XMP packet that sits in a
+    /Type /Metadata stream. A packet inside an image or another stream is not touched."""
+    out = []
+    for m in _XPACKET.finditer(data):
+        head = data[data.rfind(b"obj", 0, m.start(1)):m.start(1)]
+        if re.search(rb"/Type\s*/Metadata\b", head) and not re.search(rb"/Subtype\s*/Image\b", head):
+            out.append((m.end(1), m.start(2), m.end(2)))
+    return out
+
+
+def _pdf_xmp_has_content(inner):
+    t = inner.strip()
+    return bool(t) and re.sub(rb"\s+", b"", t) != re.sub(rb"\s+", b"", _XMP_EMPTY)
+
 
 def inspect_pdf(data):
     ins = new_inspection("PDF")
     if not data.startswith(b"%PDF-"):
         raise ValueError("not a PDF file")
     ins["checked"] = ["Info dictionary (when stored uncompressed), XMP packet, signature fields, encryption flag, markers"]
-    ins["not_checked"] = ["objects stored inside compressed object streams", "signature validity", "page content and embedded images"]
-    refs = re.findall(rb"/Info\s+(\d+)\s+(\d+)\s+R", data)
-    info_body = None
-    if refs:
-        num, gen = refs[-1]
-        ms = list(re.finditer(rb"(?<![\d])" + num + rb"\s+" + gen + rb"\s+obj(.*?)endobj", data, re.DOTALL))
-        info_body = ms[-1].group(1) if ms else None
-        if info_body is None:
-            ins["notes"].append("The Info dictionary is stored in a compressed object stream and was not decoded.")
-    for key, kind in PDF_INFO.items():
-        if info_body is None:
-            break
-        m = re.search(rb"/" + key.encode() + rb"\s*(\((?:\\.|[^\\)])*\)|<[0-9A-Fa-f\s]*>)", info_body)
-        if m:
-            v = _pdf_string(m.group(1))
-            if v.strip():
-                ins["items"].append(item("PDF Info", key, v.strip()[:300], kind, "Document information dictionary entry."))
-    if info_body is not None:
-        ins["blocks"]["info"] = 1
-    xm = re.search(rb"<\?xpacket begin.*?<\?xpacket end[^>]*\?>", data, re.DOTALL)
-    if xm:
-        ins["blocks"]["xmp"] = 1
-        ins["items"] += xmp_items(xm.group(0).decode("utf-8", "replace"))
+    ins["not_checked"] = [PDF_NOT_CHECKED, "signature validity"]
+    refs, copies = _pdf_info_copies(data)
+    last = None
+    filled = 0
+    for start in copies:
+        spans = _pdf_string_spans(data, start)
+        if any(not _pdf_is_empty(data[b:e]) for _k, b, e in spans):
+            filled += 1
+        last = spans
+    if refs and not copies:
+        ins["notes"].append("The Info dictionary is stored in a compressed object stream and was not decoded.")
+        ins["strip_refusal"] = ("the Info dictionary is stored in a compressed object stream and no uncompressed "
+                                "copy exists, so it cannot be changed here")
+    if last is not None:
+        for key, b, e in last:
+            if key in PDF_INFO:
+                v = _pdf_string(data[b:e])
+                if v.strip():
+                    ins["items"].append(item("PDF Info", key, v.strip()[:300], PDF_INFO[key],
+                                             "Document information dictionary entry."))
+        if filled:
+            ins["blocks"]["info"] = filled
+        if len(copies) > 1:
+            ins["notes"].append(f"The Info object has {len(copies)} copies in the file (revisions); "
+                                f"{filled} still hold text. Strip blanks every copy.")
+    packets = _pdf_xmp_packets(data)
+    live = [p for p in packets if _pdf_xmp_has_content(data[p[1]:p[2]])]
+    if live:
+        ins["blocks"]["xmp"] = len(live)
+        for p in live:
+            ins["items"] += xmp_items(data[p[1]:p[2]].decode("utf-8", "replace"))
     if re.search(rb"/ByteRange\s*\[", data) or re.search(rb"/Type\s*/Sig\b", data):
         ins["provenance"]["signatures"].append("PDF digital signature field(s)")
     if re.search(rb"/Encrypt\b", data):
         ins["notes"].append("The PDF appears to be encrypted; text and some metadata may be unreadable here.")
+        ins["strip_refusal"] = "the PDF is encrypted; changing it would corrupt it"
     if data.count(b"%%EOF") > 1:
         ins["notes"].append("The PDF has several revisions (incremental updates): earlier versions of text or metadata may "
                             "still be present inside the file.")
     if b"/EmbeddedFile" in data:
         ins["notes"].append("The PDF contains embedded file attachments.")
     ins["provenance"]["c2pa"] = "possible (heuristic)" if b"c2pa" in data else None
-    ins["notes"].append("Stripping PDF metadata is not supported by this tool; use a dedicated PDF sanitiser "
-                        "(for example qpdf or Acrobat's Sanitize Document) after reviewing the list above.")
+    ins["notes"].append(PDF_STRIP_NOTE)
     return ins
+
+
+def strip_pdf(data, only):
+    """Blank the Info strings and the uncompressed XMP packets in place. The file length never changes."""
+    if re.search(rb"/Encrypt\b", data):
+        raise StripRefused("the PDF is encrypted; changing it would corrupt it")
+    out = bytearray(data)
+    removed = []
+    if "info" in only:
+        refs, copies = _pdf_info_copies(data)
+        if not copies:
+            raise StripRefused("the Info dictionary is stored in a compressed object stream and no uncompressed "
+                               "copy exists, so it cannot be changed here")
+        count = 0
+        for start in copies:
+            changed = False
+            for _k, b, e in _pdf_string_spans(data, start):
+                new = (b"<>" if data[b:b + 1] == b"<" else b"()")
+                if data[b:e] != new.ljust(e - b, b" "):
+                    out[b:e] = new.ljust(e - b, b" ")
+                    changed = True
+            count += changed
+        removed.append(f"info ({count} of {len(copies)} object copies blanked)")
+    if "xmp" in only:
+        count = 0
+        for _be, a, z in _pdf_xmp_packets(data):
+            inner = data[a:z]
+            if not _pdf_xmp_has_content(inner):
+                continue
+            fill = _XMP_EMPTY if len(_XMP_EMPTY) <= len(inner) else b""
+            out[a:z] = fill.ljust(len(inner), b" ")
+            count += 1
+        removed.append(f"xmp ({count} packet(s) blanked)")
+    new = bytes(out)
+    if len(new) != len(data):
+        raise ValueError("internal check failed: the output length differs from the input length")
+    if "info" in only:
+        _r, copies = _pdf_info_copies(new)
+        for start in copies:
+            for _k, b, e in _pdf_string_spans(new, start):
+                if not _pdf_is_empty(new[b:e].rstrip()):
+                    raise ValueError("internal check failed: an Info string is still not empty")
+    if "xmp" in only:
+        for _be, a, z in _pdf_xmp_packets(new):
+            if _pdf_xmp_has_content(new[a:z]):
+                raise ValueError("internal check failed: XMP text is still present")
+    return new, removed
 
 
 # --- HTML --------------------------------------------------------------------------------------
@@ -734,7 +878,7 @@ def detect_and_inspect(path, data):
 
 
 def strip_supported(ins):
-    return ins["format"] in ("JPEG", "PNG") or ins["format"].startswith("OOXML")
+    return ins["format"] in ("JPEG", "PNG", "PDF") or ins["format"].startswith("OOXML")
 
 
 def strip(path, data, ins, only, remove_c2pa=False):
@@ -744,6 +888,8 @@ def strip(path, data, ins, only, remove_c2pa=False):
         return strip_png(data, only, remove_c2pa)
     if ins["format"].startswith("OOXML"):
         return strip_ooxml(data, only)
+    if ins["format"] == "PDF":
+        return strip_pdf(data, only)
     raise ValueError(f"stripping {ins['format']} is not supported")
 
 

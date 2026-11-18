@@ -2,6 +2,23 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.0.0 (2026-11-18)
+
+### Added
+- Metadata removal for PDF files (Info dictionary and uncompressed XMP packet), with consent. The tool overwrites the bytes in place. The file length and the `startxref` values do not change.
+- The tool blanks every copy of the Info object in all revisions of the file. It reports how many copies it blanked.
+- The tool refuses an encrypted PDF and a PDF whose Info dictionary is in a compressed object stream. It writes nothing and returns exit code 2.
+- Tests on real structures for PDF, JPEG, PNG and DOCX (28 new tests, 195 in total).
+
+### Changed
+- The inspection of a PDF no longer says that removal is not supported. It lists the limits.
+- The inspection of a PDF reads strings with nested parentheses and escapes. Before, it stopped at the first closing parenthesis.
+- The report of a PDF lists what the tool does not change or check: page content, embedded images, fonts and objects in compressed object streams.
+- The inspection reads every XMP packet that is stored uncompressed in a metadata stream. A packet inside an image stream is not read or changed.
+- The inspection reports the number of copies of the Info object. The `blocks` count includes only copies and packets that still hold text.
+- The README line "This package is version" shows 3.0.0. Before, it showed 2.6.0.
+- The version number goes from 2.6.1 to 3.0.0 because `strip` accepts a new format.
+
 ## 2.6.1 (2026-11-18)
 
 ### Changed

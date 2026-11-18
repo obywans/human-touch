@@ -235,12 +235,13 @@ class TestPdfHtmlOthers(Base):
         self.assertTrue(ins["provenance"]["signatures"])
         self.assertIn("compressed object streams", " ".join(ins["not_checked"]))
 
-    def test_pdf_strip_not_supported_writes_nothing(self):
-        src = self.write("a.pdf", fx.build_pdf())
-        rc, _, err = self.cli("strip", src, "--confirm")
-        self.assertEqual(rc, 2)
-        self.assertIn("not supported", err)
-        self.assertEqual(os.listdir(self.tmp.name), ["a.pdf"])
+    def test_pdf_strip_writes_new_file_and_keeps_original(self):
+        data = fx.build_pdf()
+        src = self.write("a.pdf", data)
+        rc, out, _ = self.cli("strip", src, "--confirm")
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.read(src), data)
+        self.assertEqual(meta.inspect_pdf(self.read(os.path.join(self.tmp.name, "a.nometa.pdf")))["items"], [])
 
     def test_pdf_with_unreadable_info_says_so(self):
         data = fx.build_pdf().replace(b"/Info 6 0 R", b"/Info 99 0 R")
