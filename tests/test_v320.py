@@ -112,7 +112,7 @@ class PluginRouteTests(unittest.TestCase):
                      contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
                     rc = apply_update.main(["--quiet"])
                 self.assertNotEqual(rc, 0)
-                self.assertIn("claude plugin update human-touch@human-touch", buf.getvalue())
+                self.assertIn("Move from the plugin route", buf.getvalue())
                 self.assertEqual(snapshot(skill), before)
 
     def test_package_install_prints_notice_when_not_writable(self):
@@ -137,42 +137,27 @@ class PluginRouteTests(unittest.TestCase):
 class ManifestTests(unittest.TestCase):
     def setUp(self):
         self.version = read("skills", "human", "VERSION").strip()
-        self.plugin = json.loads(read(".claude-plugin", "plugin.json"))
-        self.market = json.loads(read(".claude-plugin", "marketplace.json"))
 
-    def test_plugin_manifest_keys_and_skills_folder(self):
-        for key in ("name", "version", "description", "skills"):
-            self.assertIn(key, self.plugin)
-        self.assertEqual(self.plugin["name"], "human-touch")
-        self.assertEqual(self.plugin["skills"], "./skills/")
-        self.assertTrue(os.path.isfile(os.path.join(ROOT, "skills", "human", "SKILL.md")))
-
-    def test_marketplace_manifest_keys(self):
-        self.assertEqual(self.market["name"], "human-touch")
-        self.assertIn("owner", self.market)
-        plugins = self.market["plugins"]
-        self.assertEqual(plugins[0]["name"], "human-touch")
-        self.assertEqual(plugins[0]["source"], "./")
+    def test_claude_plugin_folder_does_not_exist(self):
+        self.assertFalse(os.path.exists(os.path.join(ROOT, ".claude-plugin")))
 
     def test_version_is_the_same_everywhere(self):
         self.assertRegex(self.version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual(self.plugin["version"], self.version)
         self.assertEqual(json.loads(read("plugin.json"))["version"], self.version)
-        for entry in self.market["plugins"]:
-            if "version" in entry:
-                self.assertEqual(entry["version"], self.version)
         self.assertIn("version `%s`" % self.version, read("README.md"))
         self.assertIn("## %s (" % self.version, read("CHANGELOG.md"))
 
-    def test_readme_has_no_false_plugin_statement(self):
-        self.assertNotIn("There is no plugin and no marketplace", read("README.md"))
-        self.assertIn("claude plugin update human-touch@human-touch", read("README.md"))
+    def test_readme_offers_one_claude_code_route(self):
+        text = read("README.md")
+        self.assertNotIn("claude plugin marketplace", text)
+        self.assertNotIn("claude plugin install", text)
+        self.assertIn("claude plugin uninstall human-touch@human-touch", text)
+        self.assertIn("Move from the plugin route", text)
 
-    def test_update_instructions_name_both_commands_and_consent(self):
+    def test_update_instructions_have_no_plugin_update_flow(self):
         text = read("skills", "human", "scripts", "ACTUALIZAR.md")
-        self.assertIn("claude plugin marketplace update human-touch", text)
-        self.assertIn("claude plugin update human-touch@human-touch", text)
-        self.assertIn("/reload-plugins", text)
+        self.assertNotIn("claude plugin", text)
+        self.assertIn("Move from the plugin route", text)
         self.assertIn("PACKAGE_INSTALL", text)
         self.assertIn("PACKAGE_INSTALL", read("skills", "human", "SKILL.md"))
 

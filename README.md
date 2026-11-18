@@ -27,11 +27,11 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `3.2.0`.
+This package is version `3.2.1`.
 
 ## Install
 
-HumanTouch is one skill. It has two routes for Claude Code. The skill-folder route gives the short command `/human`. The plugin route gives the command `/human-touch:human`, because Claude Code adds the plugin name as a prefix. Both routes use the same files in `skills/human/`.
+HumanTouch is one skill. It has one route for Claude Code: the skill folder. The command is always `/human`.
 
 **Requirement:** Python 3.9 or newer, and git. Use `python3` on macOS and Linux. Use `py -3` or `python` on Windows.
 
@@ -50,17 +50,6 @@ git clone https://github.com/obywans/human-touch $env:USERPROFILE\.human-touch; 
 The installer keeps one clone in `~/.human-touch`. It links the clone into the skills folder of each host. It never overwrites a file or folder that exists. Options: `--claude`, `--agents`, `--gemini-command` (`-Claude`, `-Agents`, `-GeminiCommand` on Windows).
 
 **Update.** Each time you run `/human`, the skill checks for a new version first. The check contacts GitHub at most once in an hour. If a new version exists, `/human` asks you after the answer. You can also run `git -C ~/.human-touch pull`.
-
-**Claude Code plugin route.** Run these two commands in a terminal:
-
-```sh
-claude plugin marketplace add obywans/human-touch
-claude plugin install human-touch@human-touch
-```
-
-Then restart Claude Code or run `/reload-plugins`. Use the command `/human-touch:human`.
-
-To update, `/human` asks for your consent after the answer. If you agree, it runs `claude plugin marketplace update human-touch` and then `claude plugin update human-touch@human-touch`. Restart Claude Code or run `/reload-plugins` to load the new version. If a command fails, run the two commands yourself.
 
 **Package routes.** The files `human-skill.zip` (claude.ai) and `human-touch.mcpb` (Claude Desktop) cannot update themselves. The skill tells you the new version number and the release link. Download the new file from the release page and upload or install it again.
 
@@ -101,15 +90,23 @@ You can also build `dist/human-touch.mcpb` with `python3 tools/build_packages.py
 
 The workflow `.github/workflows/tests.yml` runs all tests on Ubuntu, macOS and Windows. It uses Python 3.9, 3.10, 3.12 and 3.13. It also tests `install.ps1` on Windows.
 
-### Choose a route
+### Routes
 
 | Route | Command | Update |
 |---|---|---|
 | Skill folder (installer above) | `/human` | `/human` asks for consent, then runs `apply_update.py`. |
-| Claude Code plugin | `/human-touch:human` | `/human` asks for consent, then runs the two `claude plugin` commands. Reload the plugins afterward. |
 | `human-skill.zip`, `human-touch.mcpb` | claude.ai or Claude Desktop | No self-update. Download the new file from the release page. |
 
-Use only one Claude Code route at a time. If you installed the plugin (versions 2.4.0 to 2.5.1 or 3.2.0) and want the short command `/human`, run `claude plugin uninstall human-touch@human-touch`. Then run the installer above.
+### Move from the plugin route
+
+Did you install HumanTouch as a Claude Code plugin (versions 2.4.0 to 2.5.1 or 3.2.0)? No plugin update reaches version 3.x. Run these two commands:
+
+```sh
+claude plugin uninstall human-touch@human-touch
+sh ~/.human-touch/install.sh
+```
+
+If `~/.human-touch` does not exist, run the clone command from the Install section first. On Windows, run the PowerShell command from the Install section instead.
 
 ## Auto-update (skill form only)
 
@@ -121,7 +118,7 @@ Once installed, `/human` checks whether a newer version exists, and asks you, in
 
 If a newer version exists, the rewrite is delivered exactly as normal, and only afterward — never before, never in the middle — does `/human` add one line asking, in the language you wrote to it in, whether you want to update now. Nothing is applied unless you answer yes. If you do, `scripts/apply_update.py` runs and reports whether it actually succeeded; if you say no, or don't answer, nothing happens and it won't ask again that session.
 
-**Plugin and package installs.** For a plugin install, the check prints the installed and the latest version. The skill never writes in the plugin folders. It runs the two official plugin commands only after you agree. For a package install, the skill gives a notice and the link, and does not claim to update itself.
+**Old plugin and package installs.** For an old plugin install, the check prints the installed and the latest version. The skill tells you to move to the skill folder. See "Move from the plugin route". It never writes in the plugin folders. For a package install, the skill gives a notice and the link, and does not claim to update itself.
 
 **What "update" means here:** only the files in `skills/human/` (mainly `SKILL.md` and `VERSION`) are replaced with the new release's versions. Nothing downloaded is ever executed as code — a copy-mode update downloads a release source archive from GitHub and copies specific files out of it; a git-mode update runs a fast-forward-only `git pull`-equivalent, which git itself refuses if your copy has local changes or has diverged.
 
@@ -268,7 +265,7 @@ python3 tests/test_media_strip.py              # EPUB, HTML, MP3 and MP4/M4A: in
 python3 tests/make_examples.py --check          # examples page matches the recorded outputs
 ```
 
-- Run `python3 -m unittest discover -s tests -q` to run all unit tests. The suite has 256 tests: 238 before 3.2.0 and 18 new ones. The 3.0.0 text said 195 tests; the real number was 196.
+- Run `python3 -m unittest discover -s tests -q` to run all unit tests. The suite has 255 tests: 238 before 3.2.0, 18 from 3.2.0 and one fewer in 3.2.1. The 3.0.0 text said 195 tests; the real number was 196.
 - `tests/inputs/` holds twenty-one representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian. Five more (17 to 21) were added in 2.3.0 for failures reported for similar tools: numbers with their units and logic words, warning symbols, Spanish quotation marks, a Romanian honorific with an ambiguous first name, and Plain mode.
 - `tests/recorded/` holds the outputs of `/human` on those inputs, one run per case. Cases 05 and 17 to 21 were recorded with 2.3.0, the others with earlier versions.
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
@@ -299,7 +296,6 @@ The Audit mode incorporates and adapts detection tables and rules from **Waterma
 
 ```text
 plugin.json                       portable ChatGPT/Codex plugin manifest
-.claude-plugin/                   Claude Code plugin and marketplace manifests
 mcp/human_touch_mcp.py            MCP server (stdio, read-only tools)
 tools/build_packages.py           builds dist/human-skill.zip and dist/human-touch.mcpb
 install.sh, install.ps1           installers for macOS/Linux and Windows

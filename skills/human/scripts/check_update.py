@@ -96,9 +96,9 @@ def main(argv: list[str]) -> int:
     lines = []
     release_lines = _check_github_release(installed, state, quiet)
     if plugin or not lib.skill_dir_writable(skill_dir):
-        # Plugin install: Claude Code owns these files, so only the two official
-        # plugin commands may update them (with consent). Package install (zip,
-        # extension): the files cannot be written, so give a notice only.
+        # Plugin install of an old version: Claude Code owns these files, so give
+        # a notice only. Package install (zip, extension): the files cannot be
+        # written, so give a notice only.
         # In both cases print nothing when the copy is up to date or the check failed.
         tag = "PLUGIN_INSTALL" if plugin else "PACKAGE_INSTALL"
         release_lines = [ln.replace("UPDATE_AVAILABLE", tag, 1)
