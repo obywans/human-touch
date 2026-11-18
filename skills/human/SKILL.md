@@ -35,7 +35,7 @@ Run this command first, from the directory of this skill:
 python3 scripts/check_update.py --quiet
 ```
 
-On Windows, use `py -3` or `python` in place of `python3`. The command takes a few seconds at most. It reads a local cache and contacts GitHub at most once in 20 hours. If it fails, prints nothing, or the file is missing, say nothing about updates and go to step 1. A failed check must not stop or delay the work.
+On Windows, use `py -3` or `python` in place of `python3`. The command takes a few seconds at most. It reads a local cache and contacts GitHub at most once in an hour. If it fails, prints nothing, or the file is missing, say nothing about updates and go to step 1. A failed check must not stop or delay the work.
 
 If the command prints `UPDATE_AVAILABLE`, `PLUGIN_INSTALL` or `WIKIPEDIA_CHANGED`, do not mention it yet. Do the work first. Then read `scripts/ACTUALIZAR.md` and follow it. The owner of this skill changes its rules often, so the user must always get the offer to update.
 
