@@ -23,7 +23,7 @@ The writing rules and modes live in `skills/human/SKILL.md` for the skill form; 
 | Where you want to use it | Setup |
 |---|---|
 | ChatGPT and Codex | Use the portable `plugin.json` package in a supported local plugin marketplace. |
-| Claude Code | `/plugin marketplace add obywans/human-touch`, then `/plugin install human-touch@human-touch`. Then run `/human`. (Alternative without the plugin system: copy or symlink `skills/human` into `~/.claude/skills/`.) |
+| Claude Code | **Command `/human`:** `git clone https://github.com/obywans/human-touch ~/.claude/human-touch-repo && ln -s ~/.claude/human-touch-repo/skills/human ~/.claude/skills/human`. Update with `git -C ~/.claude/human-touch-repo pull`, or answer yes when `/human` offers it. (Optional plugin route, see below: its command is `/human-touch:human`.) |
 | Gemini | Create a Gem and paste the instructions from `adapters/gemini/GEM.md`. |
 | Local Qwen / llama.cpp | Paste `adapters/local-qwen/SYSTEM-PROMPT.md` into the local chat's system prompt. It makes no network requests. |
 | ChatGPT custom instructions | Use the compact text in `adapters/chatgpt/CUSTOM-INSTRUCTIONS.md` if you don't install the full skill as a plugin. |
@@ -198,17 +198,15 @@ The checker verifies the claims and facts it was told to look for. It does not r
 
 ## Installing and updating in Claude Code
 
-One repository, one plugin, one command (`/human`). Pick one install method and keep it:
+The command is `/human` only when the skill is installed as a skill (first row below). Claude Code always prefixes a plugin's skills with the plugin name, so the plugin route gives `/human-touch:human` instead; use it only if you do not mind that.
 
-| Installed as | Update with | Who updates it |
-|---|---|---|
-| Plugin (`/plugin install human-touch@human-touch`) | `claude plugin marketplace update human-touch`, then `claude plugin update human-touch@human-touch` (or `/plugin` > Installed > Update now) | Claude Code. Third-party marketplaces do not auto-update by default; enable it under `/plugin` > Marketplaces if you want. |
-| Copied into `~/.claude/skills/human` | Answer yes when `/human` offers an update, or run `python3 scripts/apply_update.py` | The built-in updater (see "Auto-update"). |
-| `git clone` symlinked into the skills folder | `git pull` (or the built-in updater) | git |
+| Installed as | Command | Update with | Who updates it |
+|---|---|---|---|
+| Skill: `git clone` + symlink into `~/.claude/skills/human` (recommended) | `/human` | `git -C ~/.claude/human-touch-repo pull`, or answer yes when `/human` offers an update | git, or the built-in updater (see "Auto-update") |
+| Skill: copied into `~/.claude/skills/human` | `/human` | Answer yes when `/human` offers an update, or run `python3 scripts/apply_update.py` | The built-in updater. It replaces `SKILL.md` and `scripts/`, so local edits are lost |
+| Plugin: `/plugin marketplace add obywans/human-touch`, `/plugin install human-touch@human-touch` | `/human-touch:human` | `claude plugin marketplace update human-touch`, then `claude plugin update human-touch@human-touch` | Claude Code. Third-party marketplaces do not auto-update by default |
 
-A plugin install is never touched by the built-in updater: the file would fight the plugin manager, so `apply_update.py` prints the plugin commands instead. Plugin updates are triggered by the `version` in `.claude-plugin/plugin.json`; a release only counts once that version is bumped. If you also keep a copy in `~/.claude/skills/human`, both load: the plugin one is `/human-touch:human`, the copy keeps the bare `/human`. Remove one of them to avoid confusion.
-
-Local edits to an installed copy (for example a trimmed SKILL.md) are overwritten by a copy-mode update. Keep your changes in a fork, or in a `git` install, where the updater refuses to touch a dirty tree.
+A plugin install is never touched by the built-in updater: the files would fight the plugin manager, so `apply_update.py` prints the plugin commands instead. Plugin updates are triggered by the `version` in `.claude-plugin/plugin.json`. Do not install both routes at once: two skills with the same purpose would both load.
 
 ## Credits
 
