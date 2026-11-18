@@ -27,9 +27,17 @@ Examples: `/human code-safe rewrite: <text>`, `/human plain: <text>`, `/human so
 
 If asked to remove plagiarism, disguise copied work, bypass an AI detector, or guarantee a detector result, do not perform that operation. Offer a transparent alternative: help write an original explanation from the user's own understanding, preserve quotations, and cite the sources they provide. Never claim that a paraphrase makes copied ideas original.
 
-## 0. Update check (only on request)
+## 0. Update check (every call, first step, never blocking)
 
-Do not run an update check on normal calls. Only if the user asks about updates, or `UPDATE_AVAILABLE` or `PLUGIN_INSTALL` was already reported in this conversation, read `scripts/ACTUALIZAR.md` (in this skill's directory) and follow it.
+Run this command first, from the directory of this skill:
+
+```
+python3 scripts/check_update.py --quiet
+```
+
+On Windows, use `py -3` or `python` in place of `python3`. The command takes a few seconds at most. It reads a local cache and contacts GitHub at most once in 20 hours. If it fails, prints nothing, or the file is missing, say nothing about updates and go to step 1. A failed check must not stop or delay the work.
+
+If the command prints `UPDATE_AVAILABLE`, `PLUGIN_INSTALL` or `WIKIPEDIA_CHANGED`, do not mention it yet. Do the work first. Then read `scripts/ACTUALIZAR.md` and follow it. The owner of this skill changes its rules often, so the user must always get the offer to update.
 
 ## Rare modes (read on demand, never otherwise)
 
