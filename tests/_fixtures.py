@@ -153,3 +153,56 @@ def build_pdf(author="Ana Pérez", text="Hello PDF world", signed=False):
     out += b"".join(b"%010d 00000 n \n" % o for o in offsets)
     out += b"trailer\n<< /Size %d /Root 1 0 R /Info 6 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref)
     return out
+
+
+PAGE_TEXT = "Hello PDF world"
+INFO_FULL = (b"<< /Title (Plan \\(draft\\) (v2) \\\\ end) /Author <FEFF0041006E0061> /Creator (Chromium) "
+             b"/Producer (Skia/PDF m120) /CreationDate (D:20261118101010+01'00') "
+             b"/ModDate (D:20261118111111+01'00') /Trapped /False >>")
+XMP_PACKET = (b'<?xpacket begin="\xef\xbb\xbf" id="W5M0MpCehiHzreSzNTczkc9d"?>'
+              b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF><rdf:Description>'
+              b"<dc:creator><rdf:Seq><rdf:li>Ana Perez</rdf:li></rdf:Seq></dc:creator>"
+              b"</rdf:Description></rdf:RDF></x:xmpmeta>" + b" " * 200 + b'<?xpacket end="w"?>')
+
+
+def build_pdf_real(info=INFO_FULL, xmp=True, revisions=1, encrypt=False, objstm=False, signed=False, text=PAGE_TEXT):
+    """A PDF with the structures that real files have: Info dictionary with nested
+    parentheses, escapes and a hexadecimal string, an uncompressed XMP packet and
+    incremental revisions (each one has its own trailer, xref table and Info copy)."""
+    stream = f"BT /F1 12 Tf 10 50 Td ({text}) Tj ET".encode()
+    objs = {1: b"<< /Type /Catalog /Pages 2 0 R" + (b" /Metadata 7 0 R" if xmp else b"") + b" >>",
+            2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3: b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 4 0 R "
+               b"/Resources << /Font << /F1 5 0 R >> >> >>",
+            4: b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream",
+            5: b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"}
+    if not objstm:
+        objs[6] = info
+    if xmp:
+        objs[7] = b"<< /Type /Metadata /Subtype /XML /Length %d >>\nstream\n" % len(XMP_PACKET) + XMP_PACKET + b"\nendstream"
+    if objstm:
+        objs[8] = b"<< /Type /ObjStm /N 1 /First 4 /Length 10 /Filter /FlateDecode >>\nstream\nxxxxxxxxxx\nendstream"
+    if signed:
+        objs[9] = b"<< /Type /Sig /Filter /Adobe.PPKLite /ByteRange [0 10 20 30] >>"
+    out, offsets = b"%PDF-1.4\n", {}
+    for n in sorted(objs):
+        offsets[n] = len(out)
+        out += b"%d 0 obj\n" % n + objs[n] + b"\nendobj\n"
+    size = max(objs) + 1
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % size
+    for n in range(1, size):
+        out += (b"%010d 00000 n \n" % offsets[n]) if n in offsets else b"0000000000 00000 f \n"
+    enc = b" /Encrypt << /Filter /Standard /V 1 /R 2 /O (x) /U (y) /P -4 >>" if encrypt else b""
+    info_ref = b"" if objstm else b" /Info 6 0 R"
+    out += b"trailer\n<< /Size %d /Root 1 0 R%s%s >>\nstartxref\n%d\n%%%%EOF\n" % (size, info_ref, enc, xref)
+    prev = xref
+    for rev in range(2, revisions + 1):
+        new_info = b"<< /Title (Revision %d title) /Author (Ana Perez) /ModDate (D:2026111%d) >>" % (rev, rev)
+        off = len(out)
+        out += b"6 0 obj\n" + new_info + b"\nendobj\n"
+        xref = len(out)
+        out += b"xref\n6 1\n%010d 00000 n \n" % off
+        out += b"trailer\n<< /Size %d /Root 1 0 R /Info 6 0 R /Prev %d >>\nstartxref\n%d\n%%%%EOF\n" % (size, prev, xref)
+        prev = xref
+    return out
