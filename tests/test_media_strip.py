@@ -523,7 +523,7 @@ class McpAndExitTests(Base):
         self.assertIn("Format: MP3", text)
         self.assertIn("NOT checked", text)
         self.assertEqual([t["name"] for t in out[2]["result"]["tools"]],
-                         ["human_audit", "human_clean", "human_metadata_inspect"])
+                         ["human_audit", "human_clean", "human_metadata_inspect", "human_update_check"])
         self.assertEqual(self.read(src), fx.build_mp3())
 
 

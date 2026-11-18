@@ -235,22 +235,34 @@ def git_working_tree_clean(repo_dir: str) -> bool:
     return out.strip() == ""
 
 
-PLUGIN_MIGRATION = (
-    "this copy was installed as a Claude Code plugin, which is no longer a supported route "
-    "(its command is /human-touch:human, not /human). Migrate once: run "
-    "`claude plugin uninstall human-touch@human-touch`, then follow \"Install\" in "
-    "https://github.com/obywans/human-touch#install"
+PLUGIN_COMMANDS = (
+    "claude plugin marketplace update human-touch",
+    "claude plugin update human-touch@human-touch",
 )
+PLUGIN_UPDATE_NOTICE = (
+    "this copy belongs to a Claude Code plugin. Claude Code owns its files, so this script does not write them. "
+    "Run these two commands, then restart Claude Code or run /reload-plugins: "
+    + " ; ".join(f"`{c}`" for c in PLUGIN_COMMANDS)
+)
+
+
+def skill_dir_writable(skill_dir: str) -> bool:
+    """True when the skill folder and its VERSION file can be written.
+    A package install (claude.ai zip, Desktop extension) usually cannot."""
+    try:
+        return os.access(skill_dir, os.W_OK) and os.access(os.path.join(skill_dir, "VERSION"), os.W_OK)
+    except OSError:
+        return False
 
 
 def is_plugin_cache(skill_dir: str) -> bool:
     """True when skill_dir lives in Claude Code's plugin cache
-    (~/.claude/plugins/cache/...). Claude Code owns those files and replaces the
+    (~/.claude/plugins/cache/... or .../plugins/marketplaces/...). Claude Code owns those files and replaces the
     whole version directory on `plugin update`; writing into it from here would
-    fight the plugin manager, so a plugin install is never self-updated; it is told
-    to migrate to the skill install instead."""
+    fight the plugin manager, so a plugin install is never self-updated by this
+    code. The skill offers the two official plugin commands instead (with consent)."""
     parts = os.path.realpath(skill_dir).replace("\\", "/").lower().split("/")
-    return any(a == "plugins" and b == "cache" for a, b in zip(parts, parts[1:]))
+    return any(a == "plugins" and b in ("cache", "marketplaces") for a, b in zip(parts, parts[1:]))
 
 
 def detect_install_mode(skill_dir: str) -> str:

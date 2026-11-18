@@ -49,7 +49,7 @@ def manifest():
         "display_name": "HumanTouch",
         "version": version(),
         "description": "Read-only tools to audit text and files for hidden watermark carriers, "
-                       "return a cleaned copy of text, and inspect file metadata. Fully local.",
+                       "return a cleaned copy of text, and inspect file metadata. Only the update check uses the network.",
         "author": {"name": "obywans", "url": "https://github.com/obywans"},
         "repository": {"type": "git", "url": "https://github.com/obywans/human-touch"},
         "license": "MIT",
@@ -66,6 +66,7 @@ def manifest():
             {"name": "human_audit", "description": "Audit text or a file for hidden watermark carriers (read-only)."},
             {"name": "human_clean", "description": "Return a cleaned copy of text without invisible Unicode (read-only)."},
             {"name": "human_metadata_inspect", "description": "List what a file reveals: EXIF, XMP, Office, PDF, HTML, EPUB, MP3, MP4/M4A (read-only)."},
+            {"name": "human_update_check", "description": "Compare the installed version with the latest GitHub release. One HTTPS request, only when asked (read-only)."},
         ],
         "compatibility": {"platforms": ["darwin", "win32", "linux"], "runtimes": {"python": ">=3.10"}},
     }

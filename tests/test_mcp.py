@@ -37,7 +37,7 @@ class McpTests(unittest.TestCase):
         self.assertEqual(out[0]["result"]["protocolVersion"], "2025-06-18")
         self.assertEqual(out[0]["result"]["serverInfo"]["name"], "human-touch")
         names = [t["name"] for t in out[1]["result"]["tools"]]
-        self.assertEqual(names, ["human_audit", "human_clean", "human_metadata_inspect"])
+        self.assertEqual(names, ["human_audit", "human_clean", "human_metadata_inspect", "human_update_check"])
         for t in out[1]["result"]["tools"]:
             self.assertTrue(t["annotations"]["readOnlyHint"])
             self.assertEqual(t["inputSchema"]["type"], "object")

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """HumanTouch MCP server (stdio). Read-only tools for hosts that have no slash commands.
 
-Standard library only, fully local: no network, no uploads, nothing is written.
+Standard library only. Nothing is written and nothing is uploaded. The tool human_update_check is the
+only tool that uses the network (one HTTPS request to the GitHub releases API, only when asked).
 It reuses the scripts in skills/human/scripts/ (one implementation, not a fork).
 
 Tools (all read-only):
   human_audit             report hidden watermark carriers and provenance markers
   human_clean             return a cleaned COPY of pasted text (invisible Unicode removed)
   human_metadata_inspect  list what a file reveals (EXIF, XMP, IPTC, Office, PDF, HTML, EPUB, MP3, MP4/M4A)
+
+  human_update_check      compare the installed version with the latest GitHub release (the only network tool)
 
 Deliberately NOT exposed: stripping metadata, removing C2PA credentials, replacing look-alike
 letters in files. Those need the user's consent and stay in the skill and the command line,
@@ -25,6 +28,7 @@ import io
 import json
 import os
 import sys
+import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = os.environ.get("HUMAN_TOUCH_SCRIPTS") or os.path.join(os.path.dirname(HERE), "skills", "human", "scripts")
@@ -50,9 +54,13 @@ SUPPORTED = LEGACY
 PROTO_KEY = "io.modelcontextprotocol/protocolVersion"
 CAPS = {"tools": {"listChanged": False}, "resources": {"listChanged": False}}
 INSTRUCTIONS = ("Read-only HumanTouch tools: audit text/files for hidden watermark carriers, return a cleaned "
-                "copy of text, inspect file metadata. To rewrite prose, read the resource humantouch://rules "
+                "copy of text, inspect file metadata. Only human_update_check uses the network, and only when "
+                "the owner asks for it. To rewrite prose, read the resource humantouch://rules "
                 "and apply it.")
 MAX_TEXT = 2_000_000
+RELEASE_URL = "https://api.github.com/repos/obywans/human-touch/releases/latest"
+RELEASE_URL_ENV = "HUMAN_TOUCH_RELEASE_URL"  # for tests only: points the check at a bad or local URL
+REINSTALL_NOTE = "Reinstall the extension by hand: Claude Desktop does not update this file"
 RULES_PATHS = (
     os.path.join(os.path.dirname(HERE), "adapters", "shared", "CORE-PROMPT.md"),
     os.path.join(HERE, "CORE-PROMPT.md"),
@@ -113,6 +121,18 @@ TOOLS = [
         },
         "annotations": {**READ_ONLY, "title": "Inspect file metadata"},
     },
+    {
+        "name": "human_update_check",
+        "title": "Check for a newer HumanTouch version",
+        "description": (
+            "Read-only. Makes one HTTPS request to the GitHub releases API of obywans/human-touch and sends "
+            "nothing else. Returns the installed version, the latest version, the release link and the "
+            "reinstall instruction. Run it only when the owner asks. It changes no file. This is the only "
+            "tool of this server that uses the network."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+        "annotations": {**READ_ONLY, "openWorldHint": True, "title": "Check for a newer version"},
+    },
 ]
 
 
@@ -156,7 +176,30 @@ def tool_meta(args):
     return meta.format_inspection(meta.detect_and_inspect(path, data), path)
 
 
-HANDLERS = {"human_audit": tool_audit, "human_clean": tool_clean, "human_metadata_inspect": tool_meta}
+def tool_update_check(args):
+    installed = SERVER["version"]
+    url = os.environ.get(RELEASE_URL_ENV) or RELEASE_URL
+    try:
+        req = urllib.request.Request(
+            url, headers={"Accept": "application/vnd.github+json", "User-Agent": "human-touch-update-check"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read(1_000_000).decode("utf-8", errors="replace"))
+        tag = data.get("tag_name") if isinstance(data, dict) else None
+        if not isinstance(tag, str) or not tag:
+            raise ValueError("no usable tag_name")
+        link = data.get("html_url")
+        if not isinstance(link, str) or not link:
+            link = "https://github.com/obywans/human-touch/releases/tag/" + tag
+    except Exception as exc:  # noqa: BLE001 - any failure becomes one short line, never a trace
+        return json.dumps({"installed": installed, "latest": None, "release_url": None,
+                           "status": "check failed: " + type(exc).__name__ + " (no network or no usable answer)",
+                           "note": REINSTALL_NOTE}, indent=2)
+    return json.dumps({"installed": installed, "latest": tag.lstrip("v"), "release_url": link,
+                       "note": REINSTALL_NOTE}, indent=2)
+
+
+HANDLERS = {"human_audit": tool_audit, "human_clean": tool_clean, "human_metadata_inspect": tool_meta,
+            "human_update_check": tool_update_check}
 
 
 def rules_text():
