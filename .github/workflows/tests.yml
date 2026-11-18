@@ -1,0 +1,40 @@
+name: tests
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+        env:
+          PYTHONUTF8: "1"
+      - name: Recorded examples are in sync
+        run: python tests/make_examples.py --check
+        env:
+          PYTHONUTF8: "1"
+      - name: install.ps1 smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $fake = Join-Path $env:RUNNER_TEMP 'fakehome'
+          New-Item -ItemType Directory -Force -Path $fake | Out-Null
+          $env:USERPROFILE = $fake
+          $env:HUMAN_TOUCH_REPO = $env:GITHUB_WORKSPACE
+          powershell -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\install.ps1" -Claude -Agents -GeminiCommand
+          if (-not (Test-Path "$fake\.claude\skills\human\SKILL.md")) { throw 'skill not linked' }
+          if (-not (Test-Path "$fake\.agents\skills\human\SKILL.md")) { throw 'agents skill not linked' }
+          if (-not (Test-Path "$fake\.gemini\commands\human.toml")) { throw 'gemini command missing' }
+          python "$fake\.claude\skills\human\scripts\watermark_audit.py" "$env:GITHUB_WORKSPACE\README.md"
+          powershell -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\install.ps1" -Claude

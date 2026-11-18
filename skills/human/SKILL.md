@@ -27,9 +27,9 @@ Examples: `/human code-safe rewrite: <text>`, `/human plain: <text>`, `/human so
 
 If asked to remove plagiarism, disguise copied work, bypass an AI detector, or guarantee a detector result, do not perform that operation. Offer a transparent alternative: help write an original explanation from the user's own understanding, preserve quotations, and cite the sources they provide. Never claim that a paraphrase makes copied ideas original.
 
-## 0. Update check (skip it for plugin installs)
+## 0. Update check (only on request)
 
-If this skill's directory path contains `plugins/cache`, it is a Claude Code plugin install: skip this step and never run an update; the plugin manager updates it (`claude plugin marketplace update human-touch`, then `claude plugin update human-touch@human-touch`). Otherwise, only when the user asks about updates or when `UPDATE_AVAILABLE` was already reported in this conversation, read `scripts/ACTUALIZAR.md` (in this skill's directory) and follow it. Do not run an update check on normal calls.
+Do not run an update check on normal calls. Only if the user asks about updates, or `UPDATE_AVAILABLE` or `PLUGIN_INSTALL` was already reported in this conversation, read `scripts/ACTUALIZAR.md` (in this skill's directory) and follow it.
 
 ## Rare modes (read on demand, never otherwise)
 
@@ -37,7 +37,7 @@ For **Clean**, **Metadata**, **Audit** or **Plain**, first read `scripts/MODOS_T
 
 ## Pre-clean for Rewrite and Code-safe rewrite
 
-Before rewriting text or a text file, run `python3 scripts/text_clean.py scan` on it (with `--protect-code` for code-safe rewrite). If it finds anything to change, rewrite from the cleaned text and add this to the `Notes:` line: what was cleaned (for example "removed 3 zero-width characters, replaced 2 odd spaces"). If it reports a warning (hidden tag characters, direction override), mention it. If the scripts cannot run, skip the pre-clean and say nothing about it. The pre-clean never replaces the self-check: every fact, name, figure, quote, the language, the voice and every code block must still be unchanged.
+Before rewriting text or a text file, run `python3 scripts/text_clean.py scan` on it (on Windows use `py -3` or `python` instead of `python3`) (with `--protect-code` for code-safe rewrite). If it finds anything to change, rewrite from the cleaned text and add this to the `Notes:` line: what was cleaned (for example "removed 3 zero-width characters, replaced 2 odd spaces"). If it reports a warning (hidden tag characters, direction override), mention it. If the scripts cannot run, skip the pre-clean and say nothing about it. The pre-clean never replaces the self-check: every fact, name, figure, quote, the language, the voice and every code block must still be unchanged.
 
 ## 1. Read the input
 

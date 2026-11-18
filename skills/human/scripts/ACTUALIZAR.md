@@ -1,5 +1,5 @@
 # HumanTouch: actualización (solo si el usuario la pide o ya se avisó de UPDATE_AVAILABLE)
-No aplica a instalaciones como plugin de Claude Code.
+Una instalación como plugin de Claude Code ya no es una vía soportada: hay que migrarla (ver más abajo).
 
 ## 0. Update check (before anything else, but never blocking)
 
@@ -15,7 +15,7 @@ Give it a few seconds at most. This never fails loudly and never changes anythin
 
 If it prints a line starting with `UPDATE_AVAILABLE`, remember it, but do not mention it yet.
 
-If it prints a line starting with `PLUGIN_INSTALL`, this skill was installed as a Claude Code plugin and the plugin manager updates it. Do not ask about updating and never run `apply_update.py`; say nothing about updates unless the user asks, and then give them the command printed in `update_with`.
+If it prints a line starting with `PLUGIN_INSTALL`, this copy was installed as a Claude Code plugin, which is no longer supported (its command would be `/human-touch:human`). Do not run `apply_update.py`. After the reply, add one line in the user's language telling them to migrate once, using the `migrate` text it printed.
 
 If it prints a line starting with `WIKIPEDIA_CHANGED`, remember it too. This only means the source Wikipedia page these patterns were informed by has changed since it was last checked — it is not a code update, and nothing about $ARGUMENTS or the rewrite changes because of it.
 
