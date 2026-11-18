@@ -65,7 +65,7 @@ def manifest():
         "tools": [
             {"name": "human_audit", "description": "Audit text or a file for hidden watermark carriers (read-only)."},
             {"name": "human_clean", "description": "Return a cleaned copy of text without invisible Unicode (read-only)."},
-            {"name": "human_metadata_inspect", "description": "List what a file reveals: EXIF, XMP, Office, PDF (read-only)."},
+            {"name": "human_metadata_inspect", "description": "List what a file reveals: EXIF, XMP, Office, PDF, HTML, EPUB, MP3, MP4/M4A (read-only)."},
         ],
         "compatibility": {"platforms": ["darwin", "win32", "linux"], "runtimes": {"python": ">=3.10"}},
     }

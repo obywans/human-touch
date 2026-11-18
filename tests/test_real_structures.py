@@ -156,8 +156,8 @@ class TestExitCodes(Base):
         rc, _, err = self.cli("strip", src, "--confirm")
         self.assertEqual(rc, 2)
         self.assertEqual(os.listdir(self.tmp.name), ["a.jpg"])
-        html = self.write("a.html", b"<p>x</p>")
-        self.assertEqual(self.cli("strip", html, "--confirm")[0], 2)
+        txt = self.write("a.txt", b"x")  # plain text has no strip support
+        self.assertEqual(self.cli("strip", txt, "--confirm")[0], 2)
         pdf = self.write("e.pdf", fx.build_pdf_real(encrypt=True))
         self.assertEqual(self.cli("strip", pdf, "--confirm")[0], 2)
 

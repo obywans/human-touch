@@ -7,15 +7,17 @@ Usage:
                                        [--confirm] [--break-provenance]
 
 inspect   Read-only. Lists the metadata found (EXIF, XMP, IPTC, PNG text,
-          Office document properties, PDF info, HTML meta), explains each
+          Office document properties, PDF info, HTML meta, EPUB, MP3, MP4/M4A), explains each
           field, and states what was NOT checked.
 strip     Writes a NEW file without the chosen metadata blocks; the original is
           never modified. Without --confirm it only prints the plan and writes
-          nothing. Supported: JPEG, PNG, DOCX/XLSX/PPTX, PDF.
+          nothing. Supported: JPEG, PNG, DOCX/XLSX/PPTX, PDF, HTML, EPUB, MP3, MP4/M4A/MOV.
           Blocks are removed whole (not tag by tag). JPEG: exif, xmp, iptc,
           comment. PNG: text, exif, time. Office: people, organization,
           descriptive. PDF: info, xmp (overwritten in place; the file length
-          does not change). Default: every block the file has except C2PA.
+          does not change). HTML: meta-identity, meta-software, meta-social.
+          EPUB: creator, publisher, rights, software, dates. MP3: id3v2, id3v1.
+          MP4/M4A/MOV: udta (changed to free; sizes stay). Default: every block the file has except C2PA.
 
 C2PA content credentials and digital signatures are never removed by this
 tool. If the file has them, strip refuses, because changing the file would
@@ -101,6 +103,8 @@ def main(argv=None) -> int:
     print("Plan: remove block(s) " + ", ".join(sorted(chosen)) + f" from {args.path}")
     print("These blocks are removed whole; authorship or copyright notices stored in them go too."
           " The original file is not modified.")
+    for note in ins.get("plan_notes", []):
+        print(note)
     if c2pa_handled:
         print("PROVENANCE: the C2PA content credentials will be REMOVED from the new file. This is not proof "
               "that no provenance signal remains: invisible pixel watermarks and server-side records can survive.")
@@ -116,6 +120,9 @@ def main(argv=None) -> int:
         out = lib.pick_output_path(args.path, ".nometa", args.output, ext)
         after = meta.detect_and_inspect(out, new_data)  # verify before anything is written
         lib.write_new_file(out, new_data)
+        with open(out, "rb") as fh:  # read the new file back: it must equal what was verified
+            if fh.read() != new_data:
+                raise ValueError("the file on disk differs from the verified data; delete " + out)
     except meta.StripRefused as exc:
         print(f"REFUSED: {exc}. Nothing was written.", file=sys.stderr)
         return 2
