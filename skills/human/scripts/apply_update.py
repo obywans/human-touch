@@ -227,7 +227,7 @@ def main(argv: list[str]) -> int:
     mode = lib.detect_install_mode(skill_dir)
 
     if mode == "plugin":
-        report(lib.PLUGIN_MIGRATION, installed, release["tag"])
+        report(lib.PLUGIN_UPDATE_NOTICE, installed, release["tag"])
         return 1
 
     if mode == "git-official":

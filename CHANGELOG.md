@@ -2,6 +2,24 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.2.0 (2026-11-18)
+
+### Added
+- The Claude Code plugin route is back. The folder `.claude-plugin/` holds `plugin.json` and `marketplace.json`. Both point to `skills/`, so one copy of the skill serves both routes. The plugin command is `/human-touch:human`. The skill-folder command stays `/human`.
+- Update of a plugin install. `check_update.py` prints `PLUGIN_INSTALL installed=X latest=Y url=...` when a newer release exists. After the work, the skill asks for consent. If the owner agrees, it runs `claude plugin marketplace update human-touch` and then `claude plugin update human-touch@human-touch`. The owner restarts Claude Code or runs `/reload-plugins`. If a command fails, the skill shows both commands and does not retry.
+- Notice for a package install. When the skill folder cannot be written (for example the `human-skill.zip` in claude.ai) and a newer release exists, `check_update.py` prints `PACKAGE_INSTALL`. The skill gives the version, the release link and the upload steps. It does not claim that it updated itself.
+- New MCP tool `human_update_check`. It is read-only. It makes one HTTPS request to the GitHub releases API when the owner asks. It returns the installed version, the latest version, the release link and the words "Reinstall the extension by hand: Claude Desktop does not update this file". It is the only tool that uses the network. A failed request returns one short line and no error trace.
+- 18 new tests in `tests/test_v320.py` (256 in total).
+
+### Changed
+- `apply_update.py` refuses to write in `plugins/cache` and in `plugins/marketplaces`. The message now names the two plugin commands.
+- `README.md`: the section "Move from the plugin route" is now "Choose a route". It shows the commands and the update method of each route. The false sentence "There is no plugin and no marketplace" is removed.
+- The MCP server has four tools. Two existing tests changed for this reason: `test_media_strip.McpAndExitTests.test_mcp_inspects_the_new_formats_and_stays_read_only` and `test_mcp.McpTests.test_handshake_and_tool_list` now expect `human_update_check` in the tool list.
+- `ACTUALIZAR.md` is rewritten with one block for each notice line.
+
+### Not added
+- No update without consent. No new dependency. No network use other than the update check and `human_update_check`.
+
 ## 3.1.0 (2026-11-18)
 
 ### Added

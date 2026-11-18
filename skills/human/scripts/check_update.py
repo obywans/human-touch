@@ -5,6 +5,8 @@ Usage: python3 scripts/check_update.py [--quiet]
 
 Prints at most two lines:
   UPDATE_AVAILABLE installed=X.Y.Z latest=A.B.C url=<release url>
+  PLUGIN_INSTALL   installed=X.Y.Z latest=A.B.C url=<release url>  (copy inside the Claude Code plugin cache)
+  PACKAGE_INSTALL  installed=X.Y.Z latest=A.B.C url=<release url>  (copy that cannot be written: zip, extension)
   WIKIPEDIA_CHANGED url=<page url>
 or, without --quiet, also:
   UP_TO_DATE installed=X.Y.Z
@@ -89,14 +91,19 @@ def main(argv: list[str]) -> int:
     if not installed:
         return 0  # no VERSION file: nothing to compare against, say nothing
 
-    if lib.is_plugin_cache(skill_dir):
-        # A plugin install is not self-updated. Tell the user how to migrate.
-        print(f"PLUGIN_INSTALL installed={installed} migrate=\"{lib.PLUGIN_MIGRATION}\"")
-        return 0
-
+    plugin = lib.is_plugin_cache(skill_dir)
     state = lib.load_state()
     lines = []
-    lines += _check_github_release(installed, state, quiet)
+    release_lines = _check_github_release(installed, state, quiet)
+    if plugin or not lib.skill_dir_writable(skill_dir):
+        # Plugin install: Claude Code owns these files, so only the two official
+        # plugin commands may update them (with consent). Package install (zip,
+        # extension): the files cannot be written, so give a notice only.
+        # In both cases print nothing when the copy is up to date or the check failed.
+        tag = "PLUGIN_INSTALL" if plugin else "PACKAGE_INSTALL"
+        release_lines = [ln.replace("UPDATE_AVAILABLE", tag, 1)
+                         for ln in release_lines if ln.startswith("UPDATE_AVAILABLE")]
+    lines += release_lines
     lines += _check_wikipedia_page(state)
     lib.save_state(state)
 
