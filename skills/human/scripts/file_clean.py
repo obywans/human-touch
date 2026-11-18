@@ -23,6 +23,8 @@ because any edit invalidates the signature.
 
 Fully local: no network. Exit codes: 0 ok, 1 error, 2 unsupported/refused.
 """
+from __future__ import annotations
+
 import argparse
 import os
 import re

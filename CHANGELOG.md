@@ -5,16 +5,19 @@ Every correction is recorded here, starting with 1.0.1. Each version is tagged i
 ## 2.6.0 (2026-11-18)
 
 ### Added
-- **MCP server** (`mcp/human_touch_mcp.py`, standard library only, stdio) for desktop clients such as Claude Desktop, Cursor and LM Studio: read-only tools `human_audit`, `human_clean`, `human_metadata_inspect`, and the writing rules as a resource. Supports MCP revision 2026-07-28 (no handshake, `server/discover`) and the older `initialize` revisions. It never exposes actions that need consent and registers no prompt named `human`.
-- **Installers**: `install.sh` (macOS, Linux) and `install.ps1` (Windows, directory junction). One clone, links into `~/.claude/skills/human` and `~/.agents/skills/human` (Codex, Gemini CLI), optional Gemini `/human` command. They never overwrite existing files.
-- **Packages**: `tools/build_packages.py` builds `human-skill.zip` (claude.ai skill upload) and `human-touch.mcpb` (Claude Desktop extension).
-- **CI** on Ubuntu, macOS and Windows with Python 3.10, 3.12 and 3.13.
-- Tests for the MCP server (both protocol eras), installer and packages.
+- MCP server `mcp/human_touch_mcp.py` for desktop apps. It uses only the Python standard library. It has three read-only tools: `human_audit`, `human_clean` and `human_metadata_inspect`. It gives the writing rules as a resource.
+- The MCP server supports revision 2026-07-28 (no handshake) and the older revisions. It has no tool that needs consent. It has no prompt named `human`.
+- Installers: `install.sh` for macOS and Linux, `install.ps1` for Windows. They link one clone into `~/.claude/skills/human` and `~/.agents/skills/human`. They never overwrite existing files.
+- The option `--gemini-command` adds a Gemini CLI command, so Gemini CLI gets `/human`.
+- `tools/build_packages.py` builds `human-skill.zip` for claude.ai and `human-touch.mcpb` for Claude Desktop.
+- Continuous integration on Ubuntu, macOS and Windows with Python 3.9, 3.10, 3.12 and 3.13.
 
 ### Changed
-- **The plugin route is removed** (`.claude-plugin/`). Claude Code always prefixes a plugin's skills (`/human-touch:human`); the command is now `/human` only. A copy installed as a plugin is told to migrate. README: one Install section per host with what was and was not tested.
-- Portable adapters now say that Audit and Clean are unavailable in text-only hosts and point to the skill or the MCP server.
-- `SKILL.md` no longer runs an update check on normal calls (only on request).
+- The plugin route is removed. Claude Code adds a prefix to plugin skills, so the command was `/human-touch:human`. The command is now `/human`. A copy that was installed as a plugin tells the user to move to the skill install.
+- The update check runs first in each `/human` call again. It contacts GitHub at most once in 20 hours. The skill asks for consent before it updates.
+- The scripts run on Python 3.9. A Codex test showed that macOS `python3` is often 3.9, and the scripts failed there before.
+- The adapters for ChatGPT, Gemini and local models say that Clean and Audit need the skill or the MCP server.
+- The README has one Install section. It shows which hosts the maintainer tested.
 
 ## 2.5.1 (2026-11-18)
 

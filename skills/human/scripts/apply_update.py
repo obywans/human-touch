@@ -22,6 +22,8 @@ Safety rules, always:
     on disk here only affects the *next* invocation of /human, not the one
     currently in progress.
 """
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess

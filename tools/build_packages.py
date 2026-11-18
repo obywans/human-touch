@@ -7,6 +7,8 @@
 
 Usage: python3 tools/build_packages.py [--out DIR]
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os

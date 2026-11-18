@@ -18,6 +18,8 @@ With "-" the text is read from stdin; clean then prints the cleaned text on
 stdout and the report on stderr. Fully local: no network, no dependencies.
 Exit codes: 0 ok, 1 usage/input error.
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os

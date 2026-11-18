@@ -18,6 +18,8 @@ hosts that turn prompts into slash commands. The rewriting rules are offered as 
 
 Run:  python3 mcp/human_touch_mcp.py   (speaks newline-delimited JSON-RPC on stdin/stdout)
 """
+from __future__ import annotations
+
 import contextlib
 import io
 import json

@@ -20,6 +20,8 @@ section for what a human does with a Wikipedia-changed notice. /human must
 work identically whether this script succeeds, fails, or is missing
 entirely.
 """
+from __future__ import annotations
+
 import sys
 import time
 

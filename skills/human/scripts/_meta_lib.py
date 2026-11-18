@@ -11,6 +11,8 @@ validates them, and never removes them. Stripping other metadata from a file
 that carries them invalidates them; callers must refuse unless the user
 accepts that explicitly (see metadata_inspect.py).
 """
+from __future__ import annotations
+
 import html
 import io
 import re

@@ -15,6 +15,8 @@ Exit codes: 0 audit ran, 1 usage/input error.
 Detection tables adapted from Watermarks Remover by Guillaume Meyer
 (MIT), see _audit_lib.py.
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os
