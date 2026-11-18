@@ -7,7 +7,7 @@ It reuses the scripts in skills/human/scripts/ (one implementation, not a fork).
 Tools (all read-only):
   human_audit             report hidden watermark carriers and provenance markers
   human_clean             return a cleaned COPY of pasted text (invisible Unicode removed)
-  human_metadata_inspect  list what a file reveals (EXIF, XMP, IPTC, Office, PDF, HTML)
+  human_metadata_inspect  list what a file reveals (EXIF, XMP, IPTC, Office, PDF, HTML, EPUB, MP3, MP4/M4A)
 
 Deliberately NOT exposed: stripping metadata, removing C2PA credentials, replacing look-alike
 letters in files. Those need the user's consent and stay in the skill and the command line,
@@ -102,7 +102,7 @@ TOOLS = [
         "title": "Inspect what a file reveals",
         "description": (
             "Read-only. Lists the metadata a local file carries (EXIF/GPS, XMP, IPTC, PNG text, Office "
-            "properties, PDF info, HTML meta) and whether C2PA credentials or signatures are present "
+            "properties, PDF info, HTML meta, EPUB, MP3 and MP4/M4A tags) and whether C2PA credentials or signatures are present "
             "(presence only, validity not checked). It always states what was NOT checked. Removal is not "
             "available here."
         ),

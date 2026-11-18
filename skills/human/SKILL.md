@@ -17,7 +17,7 @@ Available modes:
 - **Plain** (only when asked, for example `/human plain: <text>`): Rewrite plus the rules in "Plain mode", for readers who will read the text through machine translation or in a second language. It keeps the source language; it is not a translation.
 
 - **Clean** (technical cleaning): find and remove invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in pasted text or in a TXT, Markdown, HTML or DOCX file; for a PDF, extract its text and clean that. It never changes wording. See `scripts/MODOS_TECNICOS.md`.
-- **Metadata**: inspect what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explain it, and remove it only after explicit consent. It never changes wording or text. See `scripts/MODOS_TECNICOS.md`.
+- **Metadata**: inspect what a file reveals (EXIF, XMP, IPTC, Office, PDF, HTML, EPUB, MP3, MP4/M4A), explain it, and remove it only after explicit consent. It never changes wording or text. See `scripts/MODOS_TECNICOS.md`.
 
 - **Audit** (report only): detect hidden watermark carriers in pasted text or a file and report what was found, without changing anything. See `scripts/MODOS_TECNICOS.md`.
 

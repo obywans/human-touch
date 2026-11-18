@@ -2,6 +2,31 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.1.0 (2026-11-18)
+
+### Added
+- Metadata inspection and removal, with consent, for four more formats: EPUB, HTML, MP3 and MP4/M4A/MOV. Each report keeps its "NOT checked" line.
+- EPUB: the tool reads `META-INF/container.xml` and the OPF file. It removes the blocks `creator` (creator and contributor), `publisher`, `rights`, `software` (generator and `calibre:*` values) and `dates`. It keeps `dc:title`, `dc:language` and `dc:identifier`.
+- EPUB: the tool writes a new ZIP file. `mimetype` is the first entry and is stored without compression. The other parts stay byte-identical. The tool refuses an unsafe path, an encrypted entry and an oversize part.
+- HTML: the tool removes whole `<meta>` tags of the blocks `meta-identity`, `meta-software` and `meta-social`. All other bytes stay the same. The tool checks the result after the write.
+- MP3: the tool reads ID3v2 (versions 2.2, 2.3 and 2.4, with unsynchronisation, extended header and footer) and ID3v1. It removes the blocks `id3v2` and `id3v1`. The audio frames stay byte-identical.
+- MP4, M4A and MOV: the tool walks the atoms. It reports `udta`, `ilst`, `moov/meta` and `uuid` atoms. It changes the `udta` atom to `free` and sets its bytes to zero. Sizes and `stco` values stay the same.
+- The tool detects C2PA data in an MP4 `uuid` atom and in an ID3v2 frame. It does not validate it. The file needs `--break-provenance`. The tool removes C2PA data only from JPEG and PNG files.
+- The plan of a removal shows format notes, for example which fields the tool keeps.
+- 42 new tests on files built in memory (238 in total). The 3.0.0 entry said 195 tests; the real number was 196.
+
+### Changed
+- The inspection of HTML counts the `<meta>` tags per block. It ignores a `<meta>` text inside a comment, a script or a style.
+- A removal on an HTML file no longer returns exit code 2. The test that used HTML as an unsupported format now uses a TXT file.
+- After the write, the tool reads the new file back and compares it with the verified data.
+- A HEIC or AVIF photo (an `ftyp` atom without a `moov` atom) is not treated as a video. The tool reports it as an unknown format.
+- The version number goes from 3.0.0 to 3.1.0 because `strip` accepts four new formats.
+
+### Limits
+- The tool reports the `moov/meta` fields of an MP4 file (iPhone make, model, location) and `uuid` atoms. It does not remove them.
+- The tool does not check APEv2 tags or an ID3v2 tag at the end of an MP3 file.
+- The tool does not check the NCX file or the content documents of an EPUB file.
+
 ## 3.0.0 (2026-11-18)
 
 ### Added

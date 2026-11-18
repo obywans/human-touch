@@ -9,7 +9,7 @@ HumanTouch is a set of writing instructions you can run in any AI assistant — 
 In the skill form, three further, separate operations run local scripts (see "Technical modes: Clean, Metadata and Audit"):
 
 - **Clean**: finds and removes invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in text and in TXT, Markdown, HTML and DOCX files, and extracts and cleans the text of PDFs. It never changes wording and always reports what it changed.
-- **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explains it, and removes it only with your explicit consent. You can remove metadata from JPEG, PNG, Office and PDF files. C2PA content credentials and digital signatures are preserved by default; with the explicit `--remove-provenance` option (JPEG and PNG, dry run first) the credentials can be removed from a new copy.
+- **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta, EPUB, MP3 and MP4/M4A tags) and explains it. It removes metadata only with your explicit consent, from JPEG, PNG, Office, PDF, HTML, EPUB, MP3 and MP4/M4A files. C2PA content credentials and digital signatures are preserved by default; with the explicit `--remove-provenance` option (JPEG and PNG, dry run first) the credentials can be removed from a new copy.
 - **Audit**: report-only detection of hidden watermark carriers in text and files (variation selectors, combining joiners, noncharacters, reserved and private-use code points, deprecated format controls, look-alike letters inside Latin words, plus everything Clean finds) and of provenance markers (C2PA, signatures) by presence. It changes nothing (Clean then removes the stray invisible ones it flagged) and says plainly what it cannot see: statistical watermarks in word choice need the provider's secret key and cannot be confirmed or ruled out locally.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
@@ -27,7 +27,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `3.0.0`.
+This package is version `3.1.0`.
 
 ## Install
 
@@ -175,18 +175,21 @@ python3 scripts/metadata_inspect.py strip photo.jpg --only exif,xmp --confirm # 
 | Format | Clean | Metadata inspect | Metadata strip |
 |---|---|---|---|
 | TXT, Markdown | yes (new file; Markdown code protected) | n/a (no embedded fields) | n/a |
-| HTML | text nodes only, rest byte-identical | `<meta>`, author link, comments | no |
+| HTML | text nodes only, rest byte-identical | `<meta>`, author link, comments | meta-identity, meta-software, meta-social (whole `<meta>` tags; all other bytes stay the same) |
 | DOCX | text runs of body, headers, footers, notes, comments; other package parts copied unchanged; refused if signed | core/app/custom properties, reviewer names | people, organization, descriptive fields (whole blocks) |
 | XLSX, PPTX | no | same property parser | same |
 | PDF | text extracted with `pdftotext` to a new `.txt` (layout lost, PDF not rewritten) | Info dictionary, XMP, signatures, revisions | info, xmp (new copy, same length; refused for encrypted files) |
 | JPEG | no text layer | EXIF (incl. GPS and serials), XMP, IPTC, comments, C2PA marker | exif, xmp, iptc, comment (keeps pixels, colour profile and orientation) |
 | PNG | no text layer | text chunks, XMP, EXIF, timestamp, C2PA marker | text, exif, time |
+| EPUB | no | OPF creator, contributor, publisher, rights, source, dates, tool values | creator, publisher, rights, software, dates (the title, language and identifier stay; other ZIP parts stay the same) |
+| MP3 | no | ID3v2 frames, ID3v1 tag | id3v2, id3v1 (the audio frames stay the same) |
+| MP4, M4A, MOV | no | `udta`, `ilst`, `moov/meta`, `uuid` atoms, C2PA atom | udta (the atom becomes `free`; sizes and offsets stay the same) |
 | WebP | no | EXIF, XMP, C2PA marker | no |
 | Anything else | refused | marker search only (proves nothing about absence) | no |
 
 **Rules the scripts enforce.** The original is never modified or overwritten, and an existing output file is never replaced. `strip` is a dry run unless `--confirm` is given. C2PA content credentials and digital signatures are only detected, never validated and never removed; a file that has them is not stripped unless you add `--break-provenance`, and even then the credentials stay in the file and simply stop validating. This is for legitimate cleaning and privacy, not for disguising where content came from, and it says nothing about AI detectors.
 
-**Limits.** Metadata inspection reports only what it parsed, and every report lists what was not checked (for example vendor MakerNote contents, images embedded inside documents, objects inside compressed PDF streams, signature validity). For a PDF, the report says: page content, embedded images, fonts and objects inside compressed object streams are not changed or checked. A clean report does not prove that a file has no hidden marks. Images are not OCR'd. Tracked-change author names in DOCX are reported but not rewritten. Blocks are removed whole, so a copyright line stored in them goes too.
+**Limits.** Metadata inspection reports only what it parsed, and every report lists what was not checked (for example vendor MakerNote contents, images embedded inside documents, objects inside compressed PDF streams, signature validity). For a PDF, the report says: page content, embedded images, fonts and objects inside compressed object streams are not changed or checked. A clean report does not prove that a file has no hidden marks. Images are not OCR'd. Tracked-change author names in DOCX are reported but not rewritten. For MP4 files, the tool reports the fields in `moov/meta` (for example iPhone make, model and location) but it does not remove them. Blocks are removed whole, so a copyright line stored in them goes too.
 
 ## What the skill changes
 
@@ -240,10 +243,11 @@ python3 tests/test_file_clean.py                # File Cleaner: TXT/MD/HTML/DOCX
 python3 tests/test_metadata.py                  # Metadata Inspector: EXIF/XMP/PNG/Office/PDF, consent gate, C2PA preserved
 python3 tests/test_pdf_strip.py                # PDF metadata removal: Info, XMP, revisions, refusals, same length
 python3 tests/test_real_structures.py          # JPEG, PNG and DOCX removal on real structures, exit codes 0, 1 and 2
+python3 tests/test_media_strip.py              # EPUB, HTML, MP3 and MP4/M4A: inspect, strip, refusals, byte checks
 python3 tests/make_examples.py --check          # examples page matches the recorded outputs
 ```
 
-- Run `python3 -m unittest discover -s tests -q` to run all unit tests. The suite has 195 tests: 167 before 3.0.0 and 28 new ones.
+- Run `python3 -m unittest discover -s tests -q` to run all unit tests. The suite has 238 tests: 196 before 3.1.0 and 42 new ones. The 3.0.0 text said 195 tests; the real number was 196.
 - `tests/inputs/` holds twenty-one representative texts: the ten from before, plus technical documentation, a social post, a WhatsApp message, a business proposal, a personal message, and a second technical text, across English, Spanish, French and Romanian. Five more (17 to 21) were added in 2.3.0 for failures reported for similar tools: numbers with their units and logic words, warning symbols, Spanish quotation marks, a Romanian honorific with an ambiguous first name, and Plain mode.
 - `tests/recorded/` holds the outputs of `/human` on those inputs, one run per case. Cases 05 and 17 to 21 were recorded with 2.3.0, the others with earlier versions.
 - `tests/expectations.json` lists, for each case, every claim of the source as a group of accepted forms (a claim survives if any form is present), the facts that must survive word for word, and the phrases that must not appear.
@@ -254,6 +258,13 @@ python3 tests/make_examples.py --check          # examples page matches the reco
 - `tests/test_check_outputs.py` and `tests/test_style_report.py` are regression tests for the test tooling itself, added after a review found real bugs in it (Unicode NFC/NFD handling in the checker; an empty recorded file being treated as real data in the style report).
 
 - `tests/test_pdf_strip.py` tests PDF metadata removal. It uses a PDF with nested parentheses, a hexadecimal string, an XMP packet and two revisions. It checks that the file length, the `startxref` value and the page stream do not change. It checks that an encrypted file and a compressed Info dictionary are refused. It checks that a signed file needs `--break-provenance`.
+- `tests/test_media_strip.py` tests EPUB, HTML, MP3 and MP4/M4A. It builds each file in memory. It checks that these items stay the same:
+  - the parts of an EPUB file
+  - the bytes of an HTML file
+  - the audio frames of an MP3 file
+  - the sizes and `stco` values of an MP4 file
+
+  It also checks that the tool refuses damaged, encrypted and unsafe files.
 - `tests/test_real_structures.py` tests JPEG, PNG and DOCX removal on files with all the metadata blocks. It checks that the image data stays the same and that a DOCX comment part stays. It checks the exit codes.
 - `tests/test_text_clean.py`, `tests/test_file_clean.py` and `tests/test_metadata.py` test the technical modes. Sample files (JPEG with EXIF/GPS/XMP/IPTC/C2PA, PNG, DOCX, PDF) are assembled in memory by `tests/_fixtures.py`, so no binary files are stored. The PDF extraction test is skipped when `pdftotext` is not installed. They cover: each invisible-character category; the context rules that keep legitimate characters; a randomized check that visible text never changes; protected code; thirteen languages and scripts; Unicode and spaced file paths; DOCX packages staying byte-identical outside the text; the consent gate; C2PA and signatures preserved; image data, colour profile and orientation preserved; honest "not checked" reporting; and clean failures on corrupt, truncated, oversized or unsupported input.
 
