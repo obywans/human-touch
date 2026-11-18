@@ -15,6 +15,8 @@ the feature needs to handle:
   7. a copy install
   8. recovery after a failed update
 """
+from __future__ import annotations
+
 import io
 import json
 import os

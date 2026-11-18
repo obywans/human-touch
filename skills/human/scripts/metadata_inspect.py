@@ -24,6 +24,8 @@ validity is never checked here, only their presence.
 Fully local: no network, no dependencies. Exit codes: 0 ok, 1 error,
 2 refused (provenance/signature, or unsupported format).
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os

@@ -31,54 +31,66 @@ This package is version `2.6.0`.
 
 ## Install
 
-HumanTouch is one skill with one command, `/human`. There is no plugin and no marketplace: a plugin's skills are always prefixed by Claude Code (`/human-touch:human`), so the plugin route was removed.
+HumanTouch is one skill. Its command is `/human`. There is no plugin and no marketplace. Claude Code adds a prefix to plugin skills (`/human-touch:human`), so the plugin route no longer exists.
 
-**macOS and Linux** (Claude Code, and the shared skills folder used by Codex and Gemini CLI):
+**Requirement:** Python 3.9 or newer, and git. Use `python3` on macOS and Linux. Use `py -3` or `python` on Windows.
+
+**macOS and Linux:**
 
 ```sh
 git clone https://github.com/obywans/human-touch ~/.human-touch && sh ~/.human-touch/install.sh
 ```
 
-**Windows** (PowerShell; uses a directory junction, no administrator rights needed):
+**Windows (PowerShell):**
 
 ```powershell
 git clone https://github.com/obywans/human-touch $env:USERPROFILE\.human-touch; powershell -ExecutionPolicy Bypass -File $env:USERPROFILE\.human-touch\install.ps1
 ```
 
-The installer keeps one clone in `~/.human-touch` and links it into each host's skills folder. It never overwrites anything that already exists. Options: `--claude`, `--agents`, `--gemini-command` (`-Claude`, `-Agents`, `-GeminiCommand` on Windows). **Update:** `git -C ~/.human-touch pull`, or answer yes when `/human` offers an update. Python 3.10 or newer is the only requirement (`python3` on macOS and Linux; `py -3` or `python` on Windows).
+The installer keeps one clone in `~/.human-touch`. It links the clone into the skills folder of each host. It never overwrites a file or folder that exists. Options: `--claude`, `--agents`, `--gemini-command` (`-Claude`, `-Agents`, `-GeminiCommand` on Windows).
 
-| Host | How | Command | Status |
+**Update.** Each time you run `/human`, the skill checks for a new version first. The check contacts GitHub at most once in 20 hours. If a new version exists, `/human` asks you after the answer. You can also run `git -C ~/.human-touch pull`.
+
+### Hosts
+
+| Host | How to install | Command | Tested by the maintainer |
 |---|---|---|---|
-| Claude Code | installer, or link `skills/human` into `~/.claude/skills/human` | `/human` | Tested on macOS in a fresh session. Linux and Windows: see CI below |
-| Codex CLI, IDE and ChatGPT desktop (skills) | installer `--agents` (folder `~/.agents/skills/human`) | `$human` (Codex does not use `/human` for skills) | Folder and invocation taken from OpenAI's docs. Not run here |
-| Gemini CLI | installer `--agents` plus `--gemini-command` | `/human` through `~/.gemini/commands/human.toml`; the skill also activates itself | From Google's docs. Not run here (Gemini CLI is not installed on the test machine) |
-| Claude Desktop, Cursor, LM Studio (MCP) | see "MCP server" below | tools `human_audit`, `human_clean`, `human_metadata_inspect` | Protocol tested with scripted sessions. Not run inside those apps |
-| claude.ai (web, desktop, phone) | upload `human-skill.zip` (Customize > Skills > Upload a skill); build it with `python3 tools/build_packages.py` | Claude uses it when relevant. A slash command is not documented there | Not run. Whether the phone apps run skills is not documented |
-| ChatGPT, Gemini app, Gems, Custom GPTs | paste the instructions from `adapters/` | no command: these hosts have no slash commands | Instructions only: rewrite, code-safe, plain, source review. No Clean, Metadata or Audit |
-| Local Qwen, llama.cpp, any local model | paste `adapters/local-qwen/SYSTEM-PROMPT.md` as the system prompt | no command | Instructions only. No network |
-| Open WebUI | needs an MCP-to-OpenAPI proxy such as `mcpo` | tools | Not run |
+| Claude Code | installer, option `--claude` | `/human` | Yes, on macOS, in a new session |
+| Codex CLI, IDE, ChatGPT desktop | installer, option `--agents` | `$human` (Codex uses `$`, not `/`) | Yes, `$human audit` on macOS with Codex CLI |
+| Gemini CLI | installer, options `--agents` and `--gemini-command` | `/human` | No. Gemini CLI is not on the test machine |
+| Claude Desktop, Cursor, LM Studio | MCP server (see below) | tools `human_audit`, `human_clean`, `human_metadata_inspect` | Protocol: yes. Inside the desktop apps: no |
+| claude.ai (web, desktop, phone) | upload `human-skill.zip` (Customize, Skills, Upload a skill) | no slash command is documented | No |
+| ChatGPT, Gemini app, Gems, Custom GPTs | paste the text from `adapters/` | none. These hosts have no slash commands | Not applicable. Text only |
+| Local Qwen, llama.cpp, other local models | paste `adapters/local-qwen/SYSTEM-PROMPT.md` as the system prompt | none | Not applicable. Text only |
+| Open WebUI | use an MCP-to-OpenAPI proxy, for example `mcpo` | tools | No |
 
-**Phones.** No phone app runs local scripts. On a phone you get the writing rules (paste the Gem, Custom GPT or system-prompt text); Clean, Metadata and Audit need a computer, or the MCP server.
+Text-only hosts get the writing rules only. They do not get Clean, Metadata or Audit. No phone app runs local scripts.
 
-### MCP server (Claude Desktop and other desktop clients)
+**Help us test.** The maintainer tested only the rows marked "Yes". Please test your host and your system. Then open an issue at https://github.com/obywans/human-touch/issues. Write your operating system, your host, and the result.
 
-`mcp/human_touch_mcp.py` is a standard-library Python server that speaks MCP over stdio. It supports the 2026-07-28 revision (no handshake, `server/discover`) and the older handshake revisions (`initialize`). It exposes three read-only tools and the writing rules as a resource. It does not expose anything that needs consent (stripping metadata, removing C2PA, replacing characters in files) and does not register a prompt named `human`, so it never adds a second command name. Do not add it to Claude Code, where `/human` already does everything.
+### MCP server
 
-Claude Desktop (`claude_desktop_config.json`: macOS `~/Library/Application Support/Claude/`, Windows `%APPDATA%\Claude\`, Linux `~/.config/Claude/`):
+The file `mcp/human_touch_mcp.py` is an MCP server. It uses the Python standard library and speaks MCP over stdio. It supports revision 2026-07-28 (no handshake) and the older revisions (`initialize`).
+
+The server has three read-only tools. It also gives the writing rules as a resource. It has no tool that needs consent, for example metadata removal. It has no prompt named `human`, so it adds no second command name. Do not add it to Claude Code. `/human` already does the same work there.
+
+Add this to `claude_desktop_config.json`. On macOS the file is in `~/Library/Application Support/Claude/`. On Windows it is in `%APPDATA%\Claude\`. On Linux it is in `~/.config/Claude/`.
 
 ```json
 { "mcpServers": { "human-touch": { "command": "python3", "args": ["/ABSOLUTE/PATH/TO/.human-touch/mcp/human_touch_mcp.py"] } } }
 ```
 
-On Windows use `"command": "python"` and `\\` in the path. Restart the app. Alternatively build `dist/human-touch.mcpb` with `python3 tools/build_packages.py` and install it from Claude Desktop's Extensions settings. Gemini CLI: the same `mcpServers` object in `~/.gemini/settings.json`.
+On Windows, use `"command": "python"`. Write each backslash in the path as `\\`. Then restart the app. Gemini CLI uses the same `mcpServers` object in `~/.gemini/settings.json`.
+
+You can also build `dist/human-touch.mcpb` with `python3 tools/build_packages.py`. Install it from the Extensions settings of Claude Desktop.
 
 ### Continuous integration
 
-`.github/workflows/tests.yml` runs the whole suite on Ubuntu, macOS and Windows with Python 3.10, 3.12 and 3.13, and smoke-tests `install.ps1` on Windows. A result is only claimed here once that run is green.
+The workflow `.github/workflows/tests.yml` runs all tests on Ubuntu, macOS and Windows. It uses Python 3.9, 3.10, 3.12 and 3.13. It also tests `install.ps1` on Windows.
 
-### Migrating from the plugin route (2.4.0 to 2.5.1)
+### Move from the plugin route
 
-If you installed it with `/plugin install human-touch@human-touch`: run `claude plugin uninstall human-touch@human-touch`, then the installer above.
+Did you install with `/plugin install human-touch@human-touch` (versions 2.4.0 to 2.5.1)? Run `claude plugin uninstall human-touch@human-touch`. Then run the installer above.
 
 ## Auto-update (skill form only)
 
@@ -134,7 +146,7 @@ On ChatGPT or Gemini, use the matching custom-instructions/Gem setup in Install.
 
 ## Technical modes: Clean, Metadata and Audit
 
-Skill form only. These run Python scripts from `skills/human/scripts/` on your own machine. They need only Python 3.10 or newer and the standard library: nothing to install, no network access, no uploads. They are written to be portable across macOS, Linux and Windows (use `py -3` or `python` where this page says `python3`) and handle text in any language and script; output is forced to UTF-8 so names and metadata in any language print correctly. The test suite has so far been run only on macOS with Python 3.15; Windows and Linux are untested. The only optional extra is `pdftotext` (poppler), used to extract PDF text. Without it, PDF cleaning is refused and nothing is written.
+Skill form only. These run Python scripts from `skills/human/scripts/` on your own machine. They need only Python 3.9 or newer and the standard library: nothing to install, no network access, no uploads. They are written to be portable across macOS, Linux and Windows (use `py -3` or `python` where this page says `python3`) and handle text in any language and script; output is forced to UTF-8 so names and metadata in any language print correctly. The test suite has so far been run only on macOS with Python 3.15; Windows and Linux are untested. The only optional extra is `pdftotext` (poppler), used to extract PDF text. Without it, PDF cleaning is refused and nothing is written.
 
 Ask in the assistant:
 

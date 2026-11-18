@@ -9,6 +9,8 @@ network implicitly at import time, and nothing here executes any downloaded
 content as code — only JSON is parsed and, in apply_update.py, a release
 tarball's files are extracted and copied, never executed.
 """
+from __future__ import annotations
+
 import json
 import os
 import re

@@ -7,6 +7,8 @@ visible character is left alone, and a self-check after each run proves it
 emoji, ZWNJ in Persian, direction marks in right-to-left text, the
 non-breaking space of French typography) are kept and reported as kept.
 """
+from __future__ import annotations
+
 import os
 import re
 import sys
