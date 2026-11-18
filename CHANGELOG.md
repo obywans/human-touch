@@ -2,6 +2,13 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 2.5.1 (2026-11-18)
+
+### Changed
+- Lower cost per use, no feature removed. `SKILL.md` went from about 30 KB to about 20 KB: the Clean, Metadata, Audit and Plain details moved to `scripts/MODOS_TECNICOS.md`, and the update-check details to `scripts/ACTUALIZAR.md`. Both are read only when needed. Measured with `claude plugin details`: about 10.1k to about 5k tokens per invocation, and about 230 to about 85 always-on tokens.
+- Plugin installs no longer run the update check on each call (the plugin manager updates them).
+- Shorter skill description.
+
 ## 2.5.0 (2026-11-18)
 
 ### Added
