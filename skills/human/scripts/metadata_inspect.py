@@ -43,6 +43,9 @@ def main(argv=None) -> int:
     ap.add_argument("--confirm", action="store_true", help="user consented: actually write the stripped copy")
     ap.add_argument("--break-provenance", action="store_true",
                     help="allow stripping a file that carries C2PA credentials or a digital signature")
+    ap.add_argument("--remove-provenance", action="store_true",
+                    help="also remove C2PA content credentials (JPEG/PNG only). Needs --confirm; "
+                         "the caller must have the owner's reason and must keep any disclosure the context requires")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
     lib.setup_stdio()
@@ -66,6 +69,8 @@ def main(argv=None) -> int:
     prov = ins["provenance"]
     has_prov = prov["c2pa"] is True or bool(prov["signatures"])
     available = {b for b, n in ins["blocks"].items() if n and b != "c2pa"}
+    if args.remove_provenance and prov["c2pa"] is True and ins["format"] in ("JPEG", "PNG"):
+        available.add("c2pa")
     chosen = {b.strip() for b in args.only.split(",")} if args.only else set(available)
     unknown = chosen - available
     if unknown:
@@ -76,7 +81,9 @@ def main(argv=None) -> int:
         print("Nothing to remove: no removable metadata blocks were found. Nothing was written.")
         return 0
 
-    if has_prov and not args.break_provenance:
+    sigs_only = bool(prov["signatures"]) and not args.break_provenance
+    c2pa_handled = args.remove_provenance and "c2pa" in chosen
+    if has_prov and not args.break_provenance and not (c2pa_handled and not sigs_only):
         print("REFUSED: this file carries "
               + ("C2PA content credentials" if prov["c2pa"] is True else "a digital signature")
               + ". Removing any metadata changes the file and would make that provenance fail validation.\n"
@@ -87,14 +94,17 @@ def main(argv=None) -> int:
     print("Plan: remove block(s) " + ", ".join(sorted(chosen)) + f" from {args.path}")
     print("These blocks are removed whole; authorship or copyright notices stored in them go too."
           " The original file is not modified.")
-    if has_prov:
+    if c2pa_handled:
+        print("PROVENANCE: the C2PA content credentials will be REMOVED from the new file. This is not proof "
+              "that no provenance signal remains: invisible pixel watermarks and server-side records can survive.")
+    elif has_prov:
         print("PROVENANCE WARNING: the credentials/signature stay in the file but will no longer validate.")
     if not args.confirm:
         print("DRY RUN: nothing was written. Re-run with --confirm after the user has agreed.")
         return 0
 
     try:
-        new_data, removed = meta.strip(args.path, data, ins, chosen)
+        new_data, removed = meta.strip(args.path, data, ins, chosen, args.remove_provenance)
         ext = os.path.splitext(args.path)[1]
         out = lib.pick_output_path(args.path, ".nometa", args.output, ext)
         after = meta.detect_and_inspect(out, new_data)  # verify before anything is written

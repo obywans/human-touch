@@ -214,6 +214,28 @@ def _homoglyph_findings(text: str):
                                    f"looks like Latin {look!r} inside the word {word!r}")
 
 
+def _latin_for(cp: int):
+    return CYRILLIC_CONFUSABLES.get(cp) or (chr(cp - 0xFEE0) if cp in FULLWIDTH_LATIN else None)
+
+
+def fold_char(ch: str) -> str:
+    return _latin_for(ord(ch)) or ch
+
+
+def homoglyph_map(text: str) -> dict:
+    """{index: Latin letter} for look-alikes inside words that also hold ASCII letters."""
+    out = {}
+    for m in _WORD_RE.finditer(text):
+        word = m.group()
+        if not any(c.isascii() and c.isalpha() for c in word):
+            continue
+        for off, ch in enumerate(word):
+            latin = _latin_for(ord(ch))
+            if latin:
+                out[m.start() + off] = latin
+    return out
+
+
 def audit_text(text: str) -> AuditResult:
     """Scan only. Returns every finding with its verdict; never changes text."""
     result = AuditResult()

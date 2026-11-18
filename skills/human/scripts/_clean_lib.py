@@ -60,6 +60,7 @@ CATEGORY_LABELS = {
     "private-use": "private-use characters (reported, not removed)",
     "deprecated-format": "deprecated format controls",
     "script-filler": "stray Khmer/Hangul fillers",
+    "homoglyph": "look-alike letters inside Latin words (only with --fix-homoglyphs)",
 }
 
 JOINER_SCRIPT_PREFIXES = (
@@ -193,7 +194,8 @@ def _nbsp_is_intentional(text: str, i: int) -> bool:
 
 
 def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool = False,
-               scan_only: bool = False, decode_entities: bool = False) -> CleanResult:
+               scan_only: bool = False, decode_entities: bool = False,
+               fix_homoglyphs: bool = False) -> CleanResult:
     """Remove/replace anomalous invisible characters.
 
     protected: (start, end) spans that are never modified (still scanned, so
@@ -207,6 +209,10 @@ def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool =
     if bidi not in ("auto", "strip", "keep"):
         raise ValueError("bidi must be auto, strip or keep")
     protected = sorted(protected)
+    hg = {}
+    if fix_homoglyphs:
+        import _audit_lib
+        hg = _audit_lib.homoglyph_map(text)
     rtl = _is_rtl(text)
     out, findings = [], []
     line, col, pi = 1, 1, 0
@@ -238,7 +244,10 @@ def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool =
                         i = m.end()
                         continue
 
-        if cp in ZERO_WIDTH:
+        if i in hg:
+            cat, action, repl = "homoglyph", "replaced", hg[i]
+            reason = "look-alike letter inside a Latin word, replaced by the Latin letter"
+        elif cp in ZERO_WIDTH:
             cat = ZERO_WIDTH[cp]
             action, repl = "removed", ""
             if cp == 0xFEFF and i == 0:
@@ -321,7 +330,7 @@ def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool =
         if result.text != text:
             raise ValueError("internal check failed: scan_only must not change text")
     else:
-        verify_preserved(text, result.text, protected, decode_entities)
+        verify_preserved(text, result.text, protected, decode_entities, fix_homoglyphs)
     return result
 
 
@@ -338,8 +347,11 @@ def _extra_invisible(cp: int) -> bool:
             or _audit_lib._is_reserved_ignorable(cp))
 
 
-def _visible_view(s: str) -> str:
+def _visible_view(s: str, fold: bool = False) -> str:
     out = []
+    if fold:
+        import _audit_lib
+        s = "".join(_audit_lib.fold_char(c) for c in s)
     for ch in s:
         cp = ord(ch)
         if cp in ZERO_WIDTH or cp in JOINERS or cp in BIDI_MARKS or cp in BIDI_CONTROLS \
@@ -356,14 +368,15 @@ def _visible_view(s: str) -> str:
     return "".join(out)
 
 
-def verify_preserved(original: str, cleaned: str, protected=(), decode_entities: bool = False) -> None:
+def verify_preserved(original: str, cleaned: str, protected=(), decode_entities: bool = False,
+                     fold_homoglyphs: bool = False) -> None:
     """Prove that only table characters changed: the visible content is identical."""
     # Entities removed on request change the literal text, so the view is
     # compared after dropping them from the original too.
     if decode_entities:
         drop = lambda m: "" if _entity_removable(m) else m.group(0)  # noqa: E731
         original, cleaned = ENTITY_RE.sub(drop, original), ENTITY_RE.sub(drop, cleaned)
-    if _visible_view(original) != _visible_view(cleaned):
+    if _visible_view(original, fold_homoglyphs) != _visible_view(cleaned, fold_homoglyphs):
         raise ValueError("internal check failed: visible content would change; nothing was written")
     for s, e in protected:
         if decode_entities:
