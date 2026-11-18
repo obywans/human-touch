@@ -32,7 +32,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `2.5.0`.
+This package is version `2.5.1`.
 
 ## Auto-update (skill form only)
 
@@ -221,7 +221,7 @@ plugin.json                       portable ChatGPT/Codex plugin manifest
 .claude-plugin/                   Claude Code plugin manifest and marketplace (plugin.json, marketplace.json)
 skills/human/SKILL.md             the slash-command skill
 skills/human/VERSION              local package version, read by the update scripts
-skills/human/scripts/             check_update.py, apply_update.py, _update_lib.py (updater); text_clean.py, file_clean.py,
+skills/human/scripts/             MODOS_TECNICOS.md and ACTUALIZAR.md (read on demand); check_update.py, apply_update.py, _update_lib.py (updater); text_clean.py, file_clean.py,
                                   metadata_inspect.py, watermark_audit.py with their libraries _clean_lib.py, _meta_lib.py, _audit_lib.py (skill form only)
 adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions (no update mechanism)
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
