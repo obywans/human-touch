@@ -48,6 +48,8 @@ def main(argv=None) -> int:
     ap.add_argument("--protect-code", action="store_true")
     ap.add_argument("--bidi", choices=["auto", "strip", "keep"], default="auto")
     ap.add_argument("--keep-nbsp", action="store_true")
+    ap.add_argument("--fix-homoglyphs", action="store_true",
+                    help="also replace look-alike (Cyrillic/fullwidth) letters inside Latin words")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
     lib.setup_stdio()
@@ -62,7 +64,8 @@ def main(argv=None) -> int:
             return 1
         spans = lib.code_spans(text) if args.protect_code else []
         result = lib.clean_text(text, protected=spans, bidi=args.bidi,
-                                keep_nbsp=args.keep_nbsp, scan_only=scan_only)
+                                keep_nbsp=args.keep_nbsp, scan_only=scan_only,
+                                fix_homoglyphs=args.fix_homoglyphs)
         report = json.dumps(report_dict(result, scan_only), indent=2, ensure_ascii=False) \
             if args.json else lib.format_report(result, scan_only=scan_only)
 

@@ -17,11 +17,11 @@ for which of these are legitimate next to which scripts, and the look-alike
 letter (homoglyph) table. They live in `skills/human/scripts/_audit_lib.py`,
 which carries this notice in its header.
 
-**What was changed:** detection only, as a read-only "Audit" mode of `/human`.
-HumanTouch does not include Watermarks Remover's removal of C2PA content
-credentials, its statistical-watermark rewriting, its detector scoring, its
-HTTP service or its hooks. C2PA credentials and signatures are still preserved
-by HumanTouch, as before.
+**What was changed:** the tables feed a read-only "Audit" mode, the Clean mode,
+and two opt-in options (look-alike letter replacement, C2PA credential removal
+for JPEG and PNG, written natively in HumanTouch). HumanTouch does not include
+Watermarks Remover's detector scoring, its measure-and-rewrite loop, its HTTP
+service or its hooks.
 
 **What is not the original author's work:** the Audit command line
 (`watermark_audit.py`), the merge with HumanTouch's own cleaner, the report

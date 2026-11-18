@@ -323,15 +323,22 @@ def inspect_jpeg(data):
     return ins
 
 
-def strip_jpeg(data, only):
-    """Remove whole metadata blocks listed in `only`. ICC/JFIF/Adobe colour data is kept."""
+def strip_jpeg(data, only, remove_c2pa=False):
+    """Remove whole metadata blocks listed in `only`. ICC/JFIF/Adobe colour data is kept.
+    C2PA (JUMBF in APP11) is removed only when remove_c2pa is True: every APP11
+    segment is dropped, because a credential spans several of them."""
     segs = jpeg_segments(data)
     out, pos, removed = [data[:2]], 2, []
     for s in segs:
         blk = _jpeg_block(s)
+        if remove_c2pa and "c2pa" in only and s["marker"] == 0xEB and s["payload"][:2] == b"JP":
+            blk = "c2pa"
         out.append(data[pos:s["start"]])
         pos = s["start"]
-        if blk in only and blk != "c2pa":
+        if blk == "c2pa" and remove_c2pa and "c2pa" in only:
+            removed.append("c2pa (content credentials)")
+            pos = s["end"]
+        elif blk in only and blk != "c2pa":
             removed.append(blk)
             if blk == "exif":
                 try:
@@ -420,10 +427,12 @@ def inspect_png(data):
     return ins
 
 
-def strip_png(data, only):
+def strip_png(data, only, remove_c2pa=False):
     out, removed = [PNG_SIG], []
     for c in png_chunks(data):
         blk = PNG_BLOCKS.get(c["type"])
+        if blk is None and remove_c2pa and c["type"] == b"caBX":
+            blk = "c2pa"
         if blk in only:
             removed.append(blk)
         else:
@@ -726,11 +735,11 @@ def strip_supported(ins):
     return ins["format"] in ("JPEG", "PNG") or ins["format"].startswith("OOXML")
 
 
-def strip(path, data, ins, only):
+def strip(path, data, ins, only, remove_c2pa=False):
     if ins["format"] == "JPEG":
-        return strip_jpeg(data, only)
+        return strip_jpeg(data, only, remove_c2pa)
     if ins["format"] == "PNG":
-        return strip_png(data, only)
+        return strip_png(data, only, remove_c2pa)
     if ins["format"].startswith("OOXML"):
         return strip_ooxml(data, only)
     raise ValueError(f"stripping {ins['format']} is not supported")

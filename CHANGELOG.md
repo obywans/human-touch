@@ -2,6 +2,16 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 2.5.0 (2026-11-18)
+
+### Added
+- **C2PA removal, opt-in** (JPEG and PNG): `metadata_inspect.py strip <file> --remove-provenance --confirm` writes a new file without the content credentials (all JUMBF segments). Without the flag, credentials are still never removed. It needs a dry run and consent, says that removal does not prove that no provenance remains, and `SKILL.md` forbids it where disclosure is required.
+- **Look-alike letter fix, opt-in**: `text_clean.py clean <file> --fix-homoglyphs` replaces Cyrillic and fullwidth look-alikes inside Latin words. Off by default; reported as "replaced".
+- `tests/test_opt_in_removal.py`.
+
+### Still not included
+Detector scoring and the measure-before/after rewriting loop (it exists to move a detector's verdict), the file-write hook, and the Docker HTTP service (external dependencies; its functions that make sense here are native now). Rewrite mode keeps its rule of never promising a detector result.
+
 ## 2.4.0 (2026-11-18)
 
 ### Added

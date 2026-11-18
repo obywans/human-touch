@@ -9,7 +9,7 @@ HumanTouch is a set of writing instructions you can run in any AI assistant — 
 In the skill form, three further, separate operations run local scripts (see "Technical modes: Clean, Metadata and Audit"):
 
 - **Clean**: finds and removes invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in text and in TXT, Markdown, HTML and DOCX files, and extracts and cleans the text of PDFs. It never changes wording and always reports what it changed.
-- **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explains it, and removes it only with your explicit consent. C2PA content credentials and digital signatures are preserved.
+- **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explains it, and removes it only with your explicit consent. C2PA content credentials and digital signatures are preserved by default; with the explicit `--remove-provenance` option (JPEG and PNG, dry run first) the credentials can be removed from a new copy.
 - **Audit**: report-only detection of hidden watermark carriers in text and files (variation selectors, combining joiners, noncharacters, reserved and private-use code points, deprecated format controls, look-alike letters inside Latin words, plus everything Clean finds) and of provenance markers (C2PA, signatures) by presence. It changes nothing (Clean then removes the stray invisible ones it flagged) and says plainly what it cannot see: statistical watermarks in word choice need the provider's secret key and cannot be confirmed or ruled out locally.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
@@ -32,7 +32,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `2.4.0`.
+This package is version `2.5.0`.
 
 ## Auto-update (skill form only)
 
