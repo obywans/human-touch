@@ -1,24 +1,6 @@
-# HumanTouch: actualización (solo si el usuario la pide o ya se avisó de UPDATE_AVAILABLE)
-Una instalación como plugin de Claude Code ya no es una vía soportada: hay que migrarla (ver más abajo).
+# HumanTouch: actualización (se lee cuando check_update.py imprime un aviso, o si el usuario la pide)
 
-## 0. Update check (before anything else, but never blocking)
-
-This step only applies to this installed skill form, run from its own directory (the one that contains this SKILL.md) — it has no effect in the portable adapters (ChatGPT, Gemini, local Qwen), which cannot run scripts and have no update mechanism.
-
-From this same directory, run:
-
-```
-python3 scripts/check_update.py --quiet
-```
-
-Give it a few seconds at most. This never fails loudly and never changes anything on disk; if it prints nothing, or errors, or the file is missing, say nothing about updates and go straight to step 1 — a broken or offline check must never stop or delay the rewrite.
-
-If it prints a line starting with `UPDATE_AVAILABLE`, remember it, but do not mention it yet.
-
-If it prints a line starting with `PLUGIN_INSTALL`, this copy was installed as a Claude Code plugin, which is no longer supported (its command would be `/human-touch:human`). Do not run `apply_update.py`. After the reply, add one line in the user's language telling them to migrate once, using the `migrate` text it printed.
-
-If it prints a line starting with `WIKIPEDIA_CHANGED`, remember it too. This only means the source Wikipedia page these patterns were informed by has changed since it was last checked — it is not a code update, and nothing about $ARGUMENTS or the rewrite changes because of it.
-
+## Update notices (after the reply)
 
 ## 8. Update apply (only on explicit consent, after the reply, never before or during)
 
@@ -39,3 +21,5 @@ Never run this before or during the reply that first shows the question — it m
 If step 0 printed `UPDATE_AVAILABLE`, add one more line after everything else, in the language of the user's request (not necessarily the rewrite's language), asking whether to update now — for example, in Spanish: "Hay una actualización disponible: vX.Y.Z (tienes vA.B.C). ¿Quieres que la aplique ahora?" Phrase it as a real yes/no question in that language; do not just state the version and a command to run.
 
 If step 0 printed `WIKIPEDIA_CHANGED`, add one more line after everything else (after the update question too, if both printed), also in the language of the user's request: a notice that the source Wikipedia page for AI-writing patterns changed, with its URL. This does not change anything automatically and needs no answer.
+
+If step 0 printed `PLUGIN_INSTALL`, this copy was installed as a Claude Code plugin, which is no longer supported (its command would be `/human-touch:human`). Never run `apply_update.py`. After the reply, add one line in the user's language that tells the user to migrate once, with the `migrate` text it printed.
