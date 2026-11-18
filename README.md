@@ -6,10 +6,11 @@ HumanTouch is a set of writing instructions you can run in any AI assistant — 
 - **Code-safe rewrite**: the same, but for text mixed with code — fenced code blocks, inline code, commands, identifiers, URLs, and configuration values are left byte-for-byte untouched.
 - **Source review**: checks a draft's claims against sources you supply, flags unsupported claims and missing or mismatched citations, and never invents a reference.
 
-In the skill form, two further, separate operations run local scripts (see "Technical modes: Clean and Metadata"):
+In the skill form, three further, separate operations run local scripts (see "Technical modes: Clean, Metadata and Audit"):
 
 - **Clean**: finds and removes invisible or anomalous Unicode (zero-width characters, odd spaces, direction marks, hidden tag characters, control characters) in text and in TXT, Markdown, HTML and DOCX files, and extracts and cleans the text of PDFs. It never changes wording and always reports what it changed.
 - **Metadata**: shows what a file reveals (EXIF, XMP, IPTC, Office properties, PDF info, HTML meta), explains it, and removes it only with your explicit consent. C2PA content credentials and digital signatures are preserved.
+- **Audit**: report-only detection of hidden watermark carriers in text and files (variation selectors, combining joiners, noncharacters, reserved and private-use code points, deprecated format controls, look-alike letters inside Latin words, plus everything Clean finds) and of provenance markers (C2PA, signatures) by presence. It changes nothing (Clean then removes the stray invisible ones it flagged) and says plainly what it cannot see: statistical watermarks in word choice need the provider's secret key and cannot be confirmed or ruled out locally.
 
 **What it is for:** better writing. Clearer, more specific, more varied text in the register you need.
 
@@ -22,7 +23,7 @@ The writing rules and modes live in `skills/human/SKILL.md` for the skill form; 
 | Where you want to use it | Setup |
 |---|---|
 | ChatGPT and Codex | Use the portable `plugin.json` package in a supported local plugin marketplace. |
-| Claude Code | Copy or symlink `skills/human` into Claude Code's skills folder. |
+| Claude Code | `/plugin marketplace add obywans/human-touch`, then `/plugin install human-touch@human-touch`. Then run `/human`. (Alternative without the plugin system: copy or symlink `skills/human` into `~/.claude/skills/`.) |
 | Gemini | Create a Gem and paste the instructions from `adapters/gemini/GEM.md`. |
 | Local Qwen / llama.cpp | Paste `adapters/local-qwen/SYSTEM-PROMPT.md` into the local chat's system prompt. It makes no network requests. |
 | ChatGPT custom instructions | Use the compact text in `adapters/chatgpt/CUSTOM-INSTRUCTIONS.md` if you don't install the full skill as a plugin. |
@@ -31,7 +32,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `2.2.0`.
+This package is version `2.4.0`.
 
 ## Auto-update (skill form only)
 
@@ -85,7 +86,7 @@ For copied material, HumanTouch can help you write an original explanation from 
 
 On ChatGPT or Gemini, use the matching plugin/custom-instructions/Gem setup above. On local Qwen, keep the prompt in the system message. This does not automatically configure every app on your device.
 
-## Technical modes: Clean and Metadata
+## Technical modes: Clean, Metadata and Audit
 
 Skill form only. These run Python scripts from `skills/human/scripts/` on your own machine. They need only Python 3.10 or newer and the standard library: nothing to install, no network access, no uploads. They are written to be portable across macOS, Linux and Windows (use `py -3` or `python` where this page says `python3`) and handle text in any language and script; output is forced to UTF-8 so names and metadata in any language print correctly. The test suite has so far been run only on macOS with Python 3.15; Windows and Linux are untested. The only optional extra is `pdftotext` (poppler), used to extract PDF text. Without it, PDF cleaning is refused and nothing is written.
 
@@ -195,22 +196,41 @@ python3 tests/make_examples.py --check          # examples page matches the reco
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
+## Installing and updating in Claude Code
+
+One repository, one plugin, one command (`/human`). Pick one install method and keep it:
+
+| Installed as | Update with | Who updates it |
+|---|---|---|
+| Plugin (`/plugin install human-touch@human-touch`) | `claude plugin marketplace update human-touch`, then `claude plugin update human-touch@human-touch` (or `/plugin` > Installed > Update now) | Claude Code. Third-party marketplaces do not auto-update by default; enable it under `/plugin` > Marketplaces if you want. |
+| Copied into `~/.claude/skills/human` | Answer yes when `/human` offers an update, or run `python3 scripts/apply_update.py` | The built-in updater (see "Auto-update"). |
+| `git clone` symlinked into the skills folder | `git pull` (or the built-in updater) | git |
+
+A plugin install is never touched by the built-in updater: the file would fight the plugin manager, so `apply_update.py` prints the plugin commands instead. Plugin updates are triggered by the `version` in `.claude-plugin/plugin.json`; a release only counts once that version is bumped. If you also keep a copy in `~/.claude/skills/human`, both load: the plugin one is `/human-touch:human`, the copy keeps the bare `/human`. Remove one of them to avoid confusion.
+
+Local edits to an installed copy (for example a trimmed SKILL.md) are overwritten by a copy-mode update. Keep your changes in a fork, or in a `git` install, where the updater refuses to touch a dirty tree.
+
+## Credits
+
+The Audit mode incorporates and adapts detection tables and rules from **Watermarks Remover** by **Guillaume Meyer** and contributors, MIT licence: https://github.com/guillaumemeyer/watermarks-remover. HumanTouch is not the author of that work; it adapts the detection part so that one plugin covers writing, cleaning, metadata and audit. The full notice and the list of what was taken, changed and left out are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## Repository layout
 
 ```text
 plugin.json                       portable ChatGPT/Codex plugin manifest
+.claude-plugin/                   Claude Code plugin manifest and marketplace (plugin.json, marketplace.json)
 skills/human/SKILL.md             the slash-command skill
 skills/human/VERSION              local package version, read by the update scripts
 skills/human/scripts/             check_update.py, apply_update.py, _update_lib.py (updater); text_clean.py, file_clean.py,
-                                  metadata_inspect.py with their libraries _clean_lib.py and _meta_lib.py (skill form only)
+                                  metadata_inspect.py, watermark_audit.py with their libraries _clean_lib.py, _meta_lib.py, _audit_lib.py (skill form only)
 adapters/                         shared prompt, ChatGPT, Gemini, and local Qwen instructions (no update mechanism)
 docs/always-on.md                 instructions block to apply the same rules every reply, in a session or project
 examples/before-after.md          before and after outputs
 examples/evaluation.md            nine cases with what should and must not change
 tests/                            inputs, recorded outputs, expectations, checker, examples-page generator, style report, update tests, technical-mode tests
-README.md, CHANGELOG.md, LICENSE, .gitignore
+README.md, CHANGELOG.md, LICENSE, THIRD_PARTY_NOTICES.md, .gitignore
 ```
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Third-party code: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -53,6 +53,13 @@ CATEGORY_LABELS = {
     "tag": "Unicode tag characters",
     "control": "control characters",
     "replacement": "replacement characters (possible encoding damage)",
+    "variation-selector": "stray variation selectors",
+    "combining-joiner": "stray combining grapheme joiners",
+    "noncharacter": "Unicode noncharacters",
+    "reserved-ignorable": "reserved invisible code points",
+    "private-use": "private-use characters (reported, not removed)",
+    "deprecated-format": "deprecated format controls",
+    "script-filler": "stray Khmer/Hangul fillers",
 }
 
 JOINER_SCRIPT_PREFIXES = (
@@ -273,6 +280,17 @@ def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool =
         elif (cp < 0x20 and cp not in KEEP_CONTROLS) or cp == 0x7F or 0x80 <= cp <= 0x9F:
             cat = "control"
             action, repl = "removed", ""
+        elif cp >= 0x34F:
+            import _audit_lib  # lazy: _audit_lib imports this module
+            hit = _audit_lib.classify_hidden(text, i, cp)
+            if hit:
+                cat, verdict, reason = hit
+                if verdict == "flagged":
+                    action, repl = "removed", ""
+                elif verdict == "review":
+                    action, reason = "kept", "review: " + reason
+                else:
+                    action = "kept"
 
         if cat is not None:
             if prot:
@@ -307,12 +325,25 @@ def clean_text(text: str, *, protected=(), bidi: str = "auto", keep_nbsp: bool =
     return result
 
 
+def _extra_invisible(cp: int) -> bool:
+    """Invisible code points Clean may remove beyond the basic tables (variation
+    selectors, combining joiners, fillers, noncharacters, ...). The visible-view
+    check ignores them on both sides, so it still proves no visible text moved."""
+    if cp < 0x34F:
+        return False
+    import _audit_lib
+    return (cp in _audit_lib.VS_BMP or cp in _audit_lib.VS_SUPPLEMENT or cp in _audit_lib.MONGOLIAN_FVS
+            or cp == _audit_lib.CGJ or cp in _audit_lib.KHMER_VOWELS or cp in _audit_lib.HANGUL_FILLERS
+            or cp in _audit_lib.DEPRECATED_FORMAT or _audit_lib._is_noncharacter(cp)
+            or _audit_lib._is_reserved_ignorable(cp))
+
+
 def _visible_view(s: str) -> str:
     out = []
     for ch in s:
         cp = ord(ch)
         if cp in ZERO_WIDTH or cp in JOINERS or cp in BIDI_MARKS or cp in BIDI_CONTROLS \
-                or 0xE0000 <= cp <= 0xE007F:
+                or 0xE0000 <= cp <= 0xE007F or _extra_invisible(cp):
             continue
         if cp in SPACES:
             out.append(" ")

@@ -233,9 +233,25 @@ def git_working_tree_clean(repo_dir: str) -> bool:
     return out.strip() == ""
 
 
+PLUGIN_UPDATE_COMMAND = (
+    "claude plugin marketplace update human-touch && claude plugin update human-touch@human-touch"
+)
+
+
+def is_plugin_cache(skill_dir: str) -> bool:
+    """True when skill_dir lives in Claude Code's plugin cache
+    (~/.claude/plugins/cache/...). Claude Code owns those files and replaces the
+    whole version directory on `plugin update`; writing into it from here would
+    fight the plugin manager, so a plugin install is never self-updated."""
+    parts = os.path.realpath(skill_dir).replace("\\", "/").lower().split("/")
+    return any(a == "plugins" and b == "cache" for a, b in zip(parts, parts[1:]))
+
+
 def detect_install_mode(skill_dir: str) -> str:
-    """'git-official' | 'git-other' | 'copy'. Walks up from skill_dir to find
-    a .git directory the way `git -C skill_dir rev-parse` would."""
+    """'plugin' | 'git-official' | 'git-other' | 'copy'. Walks up from skill_dir
+    to find a .git directory the way `git -C skill_dir rev-parse` would."""
+    if is_plugin_cache(skill_dir):
+        return "plugin"
     try:
         is_repo = subprocess.run(
             ["git", "-C", skill_dir, "rev-parse", "--is-inside-work-tree"],

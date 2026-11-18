@@ -2,6 +2,22 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 2.4.0 (2026-11-18)
+
+### Added
+- **Audit mode** (`/human audit <text or file>`), report only: detects hidden watermark carriers that Clean did not cover (variation selectors, combining grapheme joiners, noncharacters, reserved and private-use code points, deprecated format controls, Khmer and Hangul fillers outside their script, look-alike letters inside Latin words) together with everything Clean already finds, and reports C2PA credentials and signatures by presence. Legitimate uses (emoji sequences, ideographic variation sequences, Mongolian, Khmer and Hangul text) are not flagged. It never states that a text has no watermark.
+- Detection tables and context rules adapted from Watermarks Remover by Guillaume Meyer (MIT, https://github.com/guillaumemeyer/watermarks-remover). Credits in README.md, full licence in THIRD_PARTY_NOTICES.md and in the header of `scripts/_audit_lib.py`.
+- Claude Code plugin manifest and marketplace (`.claude-plugin/`): `/plugin marketplace add obywans/human-touch`, `/plugin install human-touch@human-touch`.
+- `tests/test_watermark_audit.py`.
+
+### Changed
+- **Clean** now also removes the stray carriers that Audit flags (variation selectors, combining joiners, noncharacters, reserved code points, deprecated format controls, fillers outside their script). Audit and Clean share one classifier, so they cannot disagree. Emoji sequences and CJK, Mongolian, Khmer and Hangul uses are kept. Look-alike letters and private-use characters are reported only, never changed.
+- The built-in updater detects an installation inside Claude Code's plugin cache and never writes there; it prints the plugin update commands instead.
+- README: install and update instructions for each install method; the stated package version (it said 2.2.0) now matches VERSION.
+
+### Not included, on purpose
+Watermarks Remover's removal of C2PA credentials, the replacement of look-alike letters, its statistical-watermark rewriting loop, its detector scoring, its HTTP service (Docker) and its file-write hook. They contradict this project's rule of not evading detectors or disguising provenance, and the service needs external dependencies.
+
 ## 2.3.0 (2026-11-05)
 
 These changes come from failures that users reported for similar humanizer skills and tools (the GitHub issues listed under "Sources"), checked against this skill's own rules, examples and tests.
