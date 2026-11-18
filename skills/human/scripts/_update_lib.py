@@ -235,14 +235,9 @@ def git_working_tree_clean(repo_dir: str) -> bool:
     return out.strip() == ""
 
 
-PLUGIN_COMMANDS = (
-    "claude plugin marketplace update human-touch",
-    "claude plugin update human-touch@human-touch",
-)
 PLUGIN_UPDATE_NOTICE = (
-    "this copy belongs to a Claude Code plugin. Claude Code owns its files, so this script does not write them. "
-    "Run these two commands, then restart Claude Code or run /reload-plugins: "
-    + " ; ".join(f"`{c}`" for c in PLUGIN_COMMANDS)
+    "This copy is a plugin install of an old version. Plugin updates do not reach version 3.x. "
+    "Run the two commands of the README section 'Move from the plugin route'."
 )
 
 
@@ -260,7 +255,7 @@ def is_plugin_cache(skill_dir: str) -> bool:
     (~/.claude/plugins/cache/... or .../plugins/marketplaces/...). Claude Code owns those files and replaces the
     whole version directory on `plugin update`; writing into it from here would
     fight the plugin manager, so a plugin install is never self-updated by this
-    code. The skill offers the two official plugin commands instead (with consent)."""
+    code. The skill tells the user to move to the skill folder instead."""
     parts = os.path.realpath(skill_dir).replace("\\", "/").lower().split("/")
     return any(a == "plugins" and b in ("cache", "marketplaces") for a, b in zip(parts, parts[1:]))
 

@@ -2,6 +2,15 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.2.1 (2026-11-18)
+
+### Removed
+- The Claude Code plugin route of 3.2.0. A plugin gives the command `/human-touch:human`. The only route for Claude Code is now the skill folder, with the command `/human`.
+
+### Changed
+- The text for an old plugin install tells the user to move to the skill folder.
+- Tests: the suite has 255 tests. Five manifest tests of 3.2.0 became four tests in `tests/test_v320.py`. One new test checks that `.claude-plugin/` does not exist.
+
 ## 3.2.0 (2026-11-18)
 
 ### Added

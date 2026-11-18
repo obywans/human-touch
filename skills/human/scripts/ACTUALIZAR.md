@@ -13,14 +13,11 @@ WARNING: Never change a file or run an update command before the user agrees. Ev
 4. If the user answers no or does not answer, do nothing. Do not ask again in this session.
 5. Never run `apply_update.py` before the user agrees. Never run it in the same reply that shows the question.
 
-`PLUGIN_INSTALL installed=A latest=B url=U` means a Claude Code plugin install. Claude Code owns these files.
-1. After the reply, ask the user for consent to update the plugin. Name the two versions.
-2. If the user agrees, run `claude plugin marketplace update human-touch`.
-3. Then run `claude plugin update human-touch@human-touch`.
-4. Tell the user to restart Claude Code or to run `/reload-plugins`. The new version loads only after that.
-5. If a command fails, or the tool is not allowed, show the user the exact two commands to run by hand. Do not retry.
-6. Never run `apply_update.py` for a plugin install. It refuses to write in `plugins/cache` and in `plugins/marketplaces`.
-7. The plugin command is `/human-touch:human`. The skill-folder command is `/human`.
+`PLUGIN_INSTALL installed=A latest=B url=U` means a Claude Code plugin install of an old version.
+1. After the reply, tell the user in the language of the request: "This copy is a plugin install of an old version. Plugin updates do not reach version 3.x. Run the two commands of the README section 'Move from the plugin route'."
+2. Do not run any command for the user in this case.
+3. Never run `apply_update.py` for a plugin install. It refuses to write in `plugins/cache` and in `plugins/marketplaces`.
+4. The skill-folder command is `/human`.
 
 `PACKAGE_INSTALL installed=A latest=B url=U` means a package install that cannot write its own files (the `human-skill.zip` for claude.ai).
 1. After the reply, tell the user the new version number and the release link.
