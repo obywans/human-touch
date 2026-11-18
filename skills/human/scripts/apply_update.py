@@ -224,6 +224,11 @@ def main(argv: list[str]) -> int:
 
     mode = lib.detect_install_mode(skill_dir)
 
+    if mode == "plugin":
+        report("installed as a Claude Code plugin; the plugin manager updates it, not this script. "
+               f"Run: {lib.PLUGIN_UPDATE_COMMAND}", installed, release["tag"])
+        return 1
+
     if mode == "git-official":
         try:
             top = subprocess.run(

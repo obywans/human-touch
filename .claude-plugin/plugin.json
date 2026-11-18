@@ -1,0 +1,13 @@
+{
+  "name": "human-touch",
+  "version": "2.4.0",
+  "description": "Portable writing improvement, code-safe editing, citation review, invisible-Unicode cleaning, metadata inspection and watermark audit.",
+  "license": "MIT",
+  "homepage": "https://github.com/obywans/human-touch",
+  "repository": "https://github.com/obywans/human-touch",
+  "skills": "./skills/",
+  "author": {
+    "name": "obywans",
+    "url": "https://github.com/obywans"
+  }
+}
