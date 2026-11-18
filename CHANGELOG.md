@@ -2,6 +2,11 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 2.6.1 (2026-11-18)
+
+### Changed
+- The update check contacts GitHub at most once in an hour. Before, it waited 20 hours. A new release now reaches users within an hour.
+
 ## 2.6.0 (2026-11-18)
 
 ### Added

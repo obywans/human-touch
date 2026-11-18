@@ -29,7 +29,7 @@ OFFICIAL_REMOTE_RE = re.compile(
     rf"^(https://|git@)github\.com[:/]{OWNER}/{REPO}(\.git)?/?$", re.IGNORECASE
 )
 DEFAULT_TIMEOUT = 4  # seconds; never let a hung network call block /human
-DEFAULT_THROTTLE_SECONDS = 20 * 3600  # check at most once per ~20 hours
+DEFAULT_THROTTLE_SECONDS = 3600  # check GitHub at most once per hour
 
 # The source page this project's patterns were informed by. This is a
 # notice-only check: it reports that the page changed, it never reads the

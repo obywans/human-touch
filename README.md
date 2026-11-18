@@ -49,7 +49,7 @@ git clone https://github.com/obywans/human-touch $env:USERPROFILE\.human-touch; 
 
 The installer keeps one clone in `~/.human-touch`. It links the clone into the skills folder of each host. It never overwrites a file or folder that exists. Options: `--claude`, `--agents`, `--gemini-command` (`-Claude`, `-Agents`, `-GeminiCommand` on Windows).
 
-**Update.** Each time you run `/human`, the skill checks for a new version first. The check contacts GitHub at most once in 20 hours. If a new version exists, `/human` asks you after the answer. You can also run `git -C ~/.human-touch pull`.
+**Update.** Each time you run `/human`, the skill checks for a new version first. The check contacts GitHub at most once in an hour. If a new version exists, `/human` asks you after the answer. You can also run `git -C ~/.human-touch pull`.
 
 ### Hosts
 
@@ -98,7 +98,7 @@ This section applies to the skill form installed at `skills/human/`. The portabl
 
 Once installed, `/human` checks whether a newer version exists, and asks you, in your own language, before doing anything about it.
 
-**How it works:** the first thing `/human` does is run `scripts/check_update.py`, which compares your installed version (`skills/human/VERSION`) against [the latest GitHub release](https://github.com/obywans/human-touch/releases/latest). To avoid hitting GitHub on every single use, it caches the result in `~/.cache/human-touch/update-state.json` and only checks again after about 20 hours.
+**How it works:** the first thing `/human` does is run `scripts/check_update.py`, which compares your installed version (`skills/human/VERSION`) against [the latest GitHub release](https://github.com/obywans/human-touch/releases/latest). To avoid hitting GitHub on every single use, it caches the result in `~/.cache/human-touch/update-state.json` and only checks again after about one hour.
 
 If a newer version exists, the rewrite is delivered exactly as normal, and only afterward — never before, never in the middle — does `/human` add one line asking, in the language you wrote to it in, whether you want to update now. Nothing is applied unless you answer yes. If you do, `scripts/apply_update.py` runs and reports whether it actually succeeded; if you say no, or don't answer, nothing happens and it won't ask again that session.
 
@@ -114,7 +114,7 @@ If a newer version exists, the rewrite is delivered exactly as normal, and only 
 
 **If you installed before 2.1.0 (1.3.1 or earlier):** your existing updater already points at "the latest GitHub release", so it will find and apply 2.1.0 the same way it always found releases — nothing extra to do. **If you installed 2.0.0 specifically**, that release shipped with no updater at all, so there is nothing on your disk to trigger the check; copy or symlink `skills/human` again from this repository to get it back.
 
-**Wikipedia notice.** HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once, by hand, not kept in sync automatically. The same `check_update.py` run, using the same cache file and the same ~20-hour throttle, also asks Wikipedia's API for that page's current revision id — not its content — and compares it to the last one seen. If it changed, `/human` adds one line, in your language: that the source page changed, with its URL. That is the whole effect: a notice. Nothing is read from the page, nothing in `SKILL.md` changes on its own, and a person (currently: the maintainer) decides whether to look at the change, test anything worth incorporating against the existing cases, and publish it as a new version. Same fail-safe behavior as the code-update check: offline, Wikipedia down, or a malformed response just means no notice that time, and `/human` is unaffected either way.
+**Wikipedia notice.** HumanTouch's patterns were informed by Wikipedia's "Signs of AI writing" page, read once, by hand, not kept in sync automatically. The same `check_update.py` run, using the same cache file and the same one-hour throttle, also asks Wikipedia's API for that page's current revision id — not its content — and compares it to the last one seen. If it changed, `/human` adds one line, in your language: that the source page changed, with its URL. That is the whole effect: a notice. Nothing is read from the page, nothing in `SKILL.md` changes on its own, and a person (currently: the maintainer) decides whether to look at the change, test anything worth incorporating against the existing cases, and publish it as a new version. Same fail-safe behavior as the code-update check: offline, Wikipedia down, or a malformed response just means no notice that time, and `/human` is unaffected either way.
 
 ## Usage
 
