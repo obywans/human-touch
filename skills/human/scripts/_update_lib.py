@@ -233,8 +233,11 @@ def git_working_tree_clean(repo_dir: str) -> bool:
     return out.strip() == ""
 
 
-PLUGIN_UPDATE_COMMAND = (
-    "claude plugin marketplace update human-touch && claude plugin update human-touch@human-touch"
+PLUGIN_MIGRATION = (
+    "this copy was installed as a Claude Code plugin, which is no longer a supported route "
+    "(its command is /human-touch:human, not /human). Migrate once: run "
+    "`claude plugin uninstall human-touch@human-touch`, then follow \"Install\" in "
+    "https://github.com/obywans/human-touch#install"
 )
 
 
@@ -242,7 +245,8 @@ def is_plugin_cache(skill_dir: str) -> bool:
     """True when skill_dir lives in Claude Code's plugin cache
     (~/.claude/plugins/cache/...). Claude Code owns those files and replaces the
     whole version directory on `plugin update`; writing into it from here would
-    fight the plugin manager, so a plugin install is never self-updated."""
+    fight the plugin manager, so a plugin install is never self-updated; it is told
+    to migrate to the skill install instead."""
     parts = os.path.realpath(skill_dir).replace("\\", "/").lower().split("/")
     return any(a == "plugins" and b == "cache" for a, b in zip(parts, parts[1:]))
 

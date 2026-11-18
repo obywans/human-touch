@@ -20,19 +20,65 @@ In the skill form, three further, separate operations run local scripts (see "Te
 
 The writing rules and modes live in `skills/human/SKILL.md` for the skill form; the same rules in host-neutral form live in `adapters/shared/CORE-PROMPT.md`. Neither needs an MCP server or any other external service; both are instructions only, and whichever assistant you run them in does the actual writing. Only the skill form (`skills/human/`) can check its own version and, with your consent, update itself — see "Auto-update" below. The portable adapters below are plain text you paste into another assistant; they cannot run scripts, so they have no update mechanism and never will — update them by pasting in a newer version yourself.
 
-| Where you want to use it | Setup |
-|---|---|
-| ChatGPT and Codex | Use the portable `plugin.json` package in a supported local plugin marketplace. |
-| Claude Code | **Command `/human`:** `git clone https://github.com/obywans/human-touch ~/.claude/human-touch-repo && ln -s ~/.claude/human-touch-repo/skills/human ~/.claude/skills/human`. Update with `git -C ~/.claude/human-touch-repo pull`, or answer yes when `/human` offers it. (Optional plugin route, see below: its command is `/human-touch:human`.) |
-| Gemini | Create a Gem and paste the instructions from `adapters/gemini/GEM.md`. |
-| Local Qwen / llama.cpp | Paste `adapters/local-qwen/SYSTEM-PROMPT.md` into the local chat's system prompt. It makes no network requests. |
-| ChatGPT custom instructions | Use the compact text in `adapters/chatgpt/CUSTOM-INSTRUCTIONS.md` if you don't install the full skill as a plugin. |
+See [Install](#install) for every host.
+
 
 The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://developers.openai.com/plugins/build/plugins). ChatGPT Custom Instructions are an account setting, not local inference ([OpenAI instructions](https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions)). Gemini Gems accept reusable instructions ([Google instructions](https://support.google.com/gemini/answer/15236405)). For local llama.cpp, the system message is passed by the client with each chat request ([llama.cpp server guide](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)).
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `2.5.1`.
+This package is version `2.6.0`.
+
+## Install
+
+HumanTouch is one skill with one command, `/human`. There is no plugin and no marketplace: a plugin's skills are always prefixed by Claude Code (`/human-touch:human`), so the plugin route was removed.
+
+**macOS and Linux** (Claude Code, and the shared skills folder used by Codex and Gemini CLI):
+
+```sh
+git clone https://github.com/obywans/human-touch ~/.human-touch && sh ~/.human-touch/install.sh
+```
+
+**Windows** (PowerShell; uses a directory junction, no administrator rights needed):
+
+```powershell
+git clone https://github.com/obywans/human-touch $env:USERPROFILE\.human-touch; powershell -ExecutionPolicy Bypass -File $env:USERPROFILE\.human-touch\install.ps1
+```
+
+The installer keeps one clone in `~/.human-touch` and links it into each host's skills folder. It never overwrites anything that already exists. Options: `--claude`, `--agents`, `--gemini-command` (`-Claude`, `-Agents`, `-GeminiCommand` on Windows). **Update:** `git -C ~/.human-touch pull`, or answer yes when `/human` offers an update. Python 3.10 or newer is the only requirement (`python3` on macOS and Linux; `py -3` or `python` on Windows).
+
+| Host | How | Command | Status |
+|---|---|---|---|
+| Claude Code | installer, or link `skills/human` into `~/.claude/skills/human` | `/human` | Tested on macOS in a fresh session. Linux and Windows: see CI below |
+| Codex CLI, IDE and ChatGPT desktop (skills) | installer `--agents` (folder `~/.agents/skills/human`) | `$human` (Codex does not use `/human` for skills) | Folder and invocation taken from OpenAI's docs. Not run here |
+| Gemini CLI | installer `--agents` plus `--gemini-command` | `/human` through `~/.gemini/commands/human.toml`; the skill also activates itself | From Google's docs. Not run here (Gemini CLI is not installed on the test machine) |
+| Claude Desktop, Cursor, LM Studio (MCP) | see "MCP server" below | tools `human_audit`, `human_clean`, `human_metadata_inspect` | Protocol tested with scripted sessions. Not run inside those apps |
+| claude.ai (web, desktop, phone) | upload `human-skill.zip` (Customize > Skills > Upload a skill); build it with `python3 tools/build_packages.py` | Claude uses it when relevant. A slash command is not documented there | Not run. Whether the phone apps run skills is not documented |
+| ChatGPT, Gemini app, Gems, Custom GPTs | paste the instructions from `adapters/` | no command: these hosts have no slash commands | Instructions only: rewrite, code-safe, plain, source review. No Clean, Metadata or Audit |
+| Local Qwen, llama.cpp, any local model | paste `adapters/local-qwen/SYSTEM-PROMPT.md` as the system prompt | no command | Instructions only. No network |
+| Open WebUI | needs an MCP-to-OpenAPI proxy such as `mcpo` | tools | Not run |
+
+**Phones.** No phone app runs local scripts. On a phone you get the writing rules (paste the Gem, Custom GPT or system-prompt text); Clean, Metadata and Audit need a computer, or the MCP server.
+
+### MCP server (Claude Desktop and other desktop clients)
+
+`mcp/human_touch_mcp.py` is a standard-library Python server that speaks MCP over stdio. It supports the 2026-07-28 revision (no handshake, `server/discover`) and the older handshake revisions (`initialize`). It exposes three read-only tools and the writing rules as a resource. It does not expose anything that needs consent (stripping metadata, removing C2PA, replacing characters in files) and does not register a prompt named `human`, so it never adds a second command name. Do not add it to Claude Code, where `/human` already does everything.
+
+Claude Desktop (`claude_desktop_config.json`: macOS `~/Library/Application Support/Claude/`, Windows `%APPDATA%\Claude\`, Linux `~/.config/Claude/`):
+
+```json
+{ "mcpServers": { "human-touch": { "command": "python3", "args": ["/ABSOLUTE/PATH/TO/.human-touch/mcp/human_touch_mcp.py"] } } }
+```
+
+On Windows use `"command": "python"` and `\\` in the path. Restart the app. Alternatively build `dist/human-touch.mcpb` with `python3 tools/build_packages.py` and install it from Claude Desktop's Extensions settings. Gemini CLI: the same `mcpServers` object in `~/.gemini/settings.json`.
+
+### Continuous integration
+
+`.github/workflows/tests.yml` runs the whole suite on Ubuntu, macOS and Windows with Python 3.10, 3.12 and 3.13, and smoke-tests `install.ps1` on Windows. A result is only claimed here once that run is green.
+
+### Migrating from the plugin route (2.4.0 to 2.5.1)
+
+If you installed it with `/plugin install human-touch@human-touch`: run `claude plugin uninstall human-touch@human-touch`, then the installer above.
 
 ## Auto-update (skill form only)
 
@@ -84,7 +130,7 @@ Choose a mode when useful:
 
 For copied material, HumanTouch can help you write an original explanation from your own understanding, retain quotations, and cite sources. It cannot make copied ideas original by rewording them.
 
-On ChatGPT or Gemini, use the matching plugin/custom-instructions/Gem setup above. On local Qwen, keep the prompt in the system message. This does not automatically configure every app on your device.
+On ChatGPT or Gemini, use the matching custom-instructions/Gem setup in Install. On local Qwen, keep the prompt in the system message. This does not automatically configure every app on your device.
 
 ## Technical modes: Clean, Metadata and Audit
 
@@ -196,18 +242,6 @@ python3 tests/make_examples.py --check          # examples page matches the reco
 
 The checker verifies the claims and facts it was told to look for. It does not read the whole text on its own, so a dropped claim is caught only if it is listed. It does not judge quality, and a passing result does not mean a text is good. Read the output yourself.
 
-## Installing and updating in Claude Code
-
-The command is `/human` only when the skill is installed as a skill (first row below). Claude Code always prefixes a plugin's skills with the plugin name, so the plugin route gives `/human-touch:human` instead; use it only if you do not mind that.
-
-| Installed as | Command | Update with | Who updates it |
-|---|---|---|---|
-| Skill: `git clone` + symlink into `~/.claude/skills/human` (recommended) | `/human` | `git -C ~/.claude/human-touch-repo pull`, or answer yes when `/human` offers an update | git, or the built-in updater (see "Auto-update") |
-| Skill: copied into `~/.claude/skills/human` | `/human` | Answer yes when `/human` offers an update, or run `python3 scripts/apply_update.py` | The built-in updater. It replaces `SKILL.md` and `scripts/`, so local edits are lost |
-| Plugin: `/plugin marketplace add obywans/human-touch`, `/plugin install human-touch@human-touch` | `/human-touch:human` | `claude plugin marketplace update human-touch`, then `claude plugin update human-touch@human-touch` | Claude Code. Third-party marketplaces do not auto-update by default |
-
-A plugin install is never touched by the built-in updater: the files would fight the plugin manager, so `apply_update.py` prints the plugin commands instead. Plugin updates are triggered by the `version` in `.claude-plugin/plugin.json`. Do not install both routes at once: two skills with the same purpose would both load.
-
 ## Credits
 
 The Audit mode incorporates and adapts detection tables and rules from **Watermarks Remover** by **Guillaume Meyer** and contributors, MIT licence: https://github.com/guillaumemeyer/watermarks-remover. HumanTouch is not the author of that work; it adapts the detection part so that one plugin covers writing, cleaning, metadata and audit. The full notice and the list of what was taken, changed and left out are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -216,7 +250,10 @@ The Audit mode incorporates and adapts detection tables and rules from **Waterma
 
 ```text
 plugin.json                       portable ChatGPT/Codex plugin manifest
-.claude-plugin/                   Claude Code plugin manifest and marketplace (plugin.json, marketplace.json)
+mcp/human_touch_mcp.py            MCP server (stdio, read-only tools)
+tools/build_packages.py           builds dist/human-skill.zip and dist/human-touch.mcpb
+install.sh, install.ps1           installers for macOS/Linux and Windows
+.github/workflows/tests.yml       tests on Ubuntu, macOS, Windows
 skills/human/SKILL.md             the slash-command skill
 skills/human/VERSION              local package version, read by the update scripts
 skills/human/scripts/             MODOS_TECNICOS.md and ACTUALIZAR.md (read on demand); check_update.py, apply_update.py, _update_lib.py (updater); text_clean.py, file_clean.py,

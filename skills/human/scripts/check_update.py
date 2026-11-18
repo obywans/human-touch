@@ -88,8 +88,8 @@ def main(argv: list[str]) -> int:
         return 0  # no VERSION file: nothing to compare against, say nothing
 
     if lib.is_plugin_cache(skill_dir):
-        # Claude Code owns this install and updates it. Never ask to self-update.
-        print(f"PLUGIN_INSTALL installed={installed} update_with=\"{lib.PLUGIN_UPDATE_COMMAND}\"")
+        # A plugin install is not self-updated. Tell the user how to migrate.
+        print(f"PLUGIN_INSTALL installed={installed} migrate=\"{lib.PLUGIN_MIGRATION}\"")
         return 0
 
     state = lib.load_state()
