@@ -2,6 +2,22 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.0 (2026-11-22)
+
+### Changed
+- The rules follow the Wikipedia page "Signs of AI writing" at revision 1387041075 (22 November 2026). The text is a short paraphrase. The page text is not copied.
+- Dashes. The skill no longer replaces every em dash. The page now says that newer models avoid em dashes, and that text with only commas and periods is itself a sign. The skill replaces a formulaic em dash and keeps the punctuation the author used. Self-check 5 follows the same rule.
+- Vocabulary. The list has new words from the newest model generation: "emphasizing", "highlighting", "enhance", "multifaceted", "prioritize", "dependable", "universally", "quietly" and "steady". The skill judges these words by density. One use is normal. The skill also states that a synonym of an overused word is not overused by that fact.
+- The example for "crucial" now gives "important" or "essential". The word "key" is on the page list of overused words, so the skill no longer suggests it.
+- New rule "Corrective disclaimers". It covers empty warnings such as "should be treated as X rather than Y", "does not establish" and "should not be confused with". The skill keeps a caveat that the source states with a reason. It keeps the qualifiers that legal, medical, financial or scientific text needs.
+- Rule "Uniform rhythm". The skill now keeps short sentences in technical, procedural and plain-language text.
+
+### Not adopted
+- The page lists strict sentences of 8 to 20 words as a sign of the newest models. The skill does not act on this sign. Many users write short procedure sentences on purpose, for example under ASD-STE100. A rule against short sentences would damage that text.
+
+### Tests
+- The suite has 255 tests. All pass. No test changed.
+
 ## 3.2.1 (2026-11-18)
 
 ### Removed
