@@ -2,6 +2,18 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.1 (2026-11-22)
+
+### Changed
+- The portable prompts now follow the rules of 3.3.0. 3.3.0 changed only the skill file `skills/human/SKILL.md`. The files `adapters/shared/CORE-PROMPT.md`, `adapters/gemini/GEM.md`, `adapters/local-qwen/SYSTEM-PROMPT.md` and `adapters/chatgpt/CUSTOM-INSTRUCTIONS.md` did not change. Hosts without the skill folder had the old rules.
+- The new text says: keep the variety of punctuation, do not strip every dash, cut empty corrective disclaimers, keep a caveat that has a reason, and keep short sentences in technical text.
+- `docs/always-on.md` has one new line with the same rule on punctuation and caveats.
+- `README.md`: the table "Routes" now lists every host group. The groups are the skill folder (Claude Code, Codex, Gemini CLI), the MCP server (Claude Desktop, Cursor, LM Studio, Open WebUI), the two packages, and the text-only hosts (ChatGPT, Gemini app, Gems, Custom GPTs, local models). Each row says how that group gets an update. Text-only hosts have no update check. The user pastes the new text again.
+
+### Notes
+- HumanTouch is not only for Anthropic products. The rules and the update notice work in every host in the table.
+- The suite has 255 tests. All pass.
+
 ## 3.3.0 (2026-11-22)
 
 ### Changed

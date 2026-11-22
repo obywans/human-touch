@@ -27,7 +27,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `3.3.0`.
+This package is version `3.3.1`.
 
 ## Install
 
@@ -94,8 +94,10 @@ The workflow `.github/workflows/tests.yml` runs all tests on Ubuntu, macOS and W
 
 | Route | Command | Update |
 |---|---|---|
-| Skill folder (installer above) | `/human` | `/human` asks for consent, then runs `apply_update.py`. |
+| Skill folder (installer above): Claude Code, Codex CLI and IDE, Gemini CLI | `/human` (`$human` in Codex) | The skill asks for consent, then runs `apply_update.py`. |
+| MCP server: Claude Desktop, Cursor, LM Studio, Open WebUI with a proxy | tools | The tool `human_update_check` shows the new version. Run `git -C ~/.human-touch pull`, or install the new `human-touch.mcpb` again. |
 | `human-skill.zip`, `human-touch.mcpb` | claude.ai or Claude Desktop | No self-update. Download the new file from the release page. |
+| Text only: ChatGPT, Gemini app, Gems, Custom GPTs, local models | none | No update check exists. Copy the new text from `adapters/` and paste it again. |
 
 ### Move from the plugin route
 
