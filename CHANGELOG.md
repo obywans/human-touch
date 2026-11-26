@@ -2,6 +2,16 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.3 (2026-11-26)
+
+### Changed
+- The `description` line of `skills/human/SKILL.md` is shorter. It now has four short sentences: the main task, the modes (plain, source review, clean, metadata, audit), the limit "Does not evade AI detectors" and the command `/human`.
+- The text is in double quotes. The colon after "Modes" needs them in YAML.
+
+### Notes
+- The limit on AI detectors stays in the description. The skill still never says that its output will pass a detector.
+- The rules in the body of the skill do not change.
+
 ## 3.3.2 (2026-11-26)
 
 ### Changed

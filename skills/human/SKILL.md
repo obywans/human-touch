@@ -1,6 +1,6 @@
 ---
 name: human
-description: Improves natural prose while preserving meaning, facts, language, voice and code. Also: plain-language mode, source review, invisible-Unicode cleaning, metadata inspection, watermark audit (report only). Does not evade AI detectors or hide where content came from. Invoke with /human or when the user asks for these tasks.
+description: "Improves natural prose while preserving meaning, facts, language, and style. Modes: plain, source review, clean, metadata, audit. Does not evade AI detectors. Invoke with /human."
 argument-hint: "[clean | metadata | audit | rewrite | plain | source review] [text, or path to a file]"
 ---
 
