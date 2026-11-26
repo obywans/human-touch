@@ -2,6 +2,16 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.2 (2026-11-26)
+
+### Changed
+- The rules follow the Wikipedia page "Signs of AI writing" at revision 1387897756 (2026-11-25T22:43:03Z). The text is a short paraphrase. The page text is not copied.
+- Vocabulary. The skill file `skills/human/SKILL.md` lists more words and phrases that the page names as signs: "bolstered", "boasts", "deeply rooted", "diverse array", "enduring", "exemplifies", "garner", "indelible mark", "interplay", "meticulously", "nestled", "profound", "renowned", "showcasing", "serves as a", "evolving landscape", "key turning point", "valuable insights", "despite these challenges", "deep dive" and "focal point". The skill judges these by density. One use is normal. The skill keeps a word that is a precise term in its field.
+
+### Notes
+- Only `skills/human/SKILL.md` has a word list. The portable prompts have no word list, so they do not change.
+- No rule was removed. The sign "sentences of 8 to 20 words" is still not adopted. See 3.3.0.
+
 ## 3.3.1 (2026-11-22)
 
 ### Changed
