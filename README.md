@@ -27,7 +27,7 @@ The ChatGPT/Codex portable plugin format is documented by [OpenAI](https://devel
 
 **Local means local only when you use a model running on your device.** The same prompt can be used in ChatGPT, Codex, or Gemini, but those services process your conversation according to their own cloud settings. This package does not make those services local.
 
-This package is version `3.3.3`.
+This package is version `3.3.4`.
 
 ## Install
 

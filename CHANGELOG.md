@@ -2,6 +2,22 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.4 (2026-11-28)
+
+### Fixed
+- The updater of a git install now says why it cannot fast-forward. It checks four cases: the history of the official repository was rewritten, the copy has commits that are not on `origin/main`, the checked-out branch is not `main`, or git failed. Before, every case printed "run `git pull` manually", and that command fails when the history was rewritten.
+- The updater never runs the recovery commands. It prints them, with a backup branch first. The skill shows them to the user.
+
+### Changed
+- The updater reads the host of a URL with a URL parser. Before, it split the text at "/". A text such as `https://evil.example#.github.com/` is now read as `evil.example`, so it fails the host check.
+- The copy update checks that the archive URL uses https and points to github.com before it sends the first request.
+- README: one line about the rewritten-history case.
+
+### Notes
+- 7 new tests use real temporary git repositories. 262 tests pass.
+- Known limit, not changed: one run of the cleaner can leave a zero-width joiner that a second run removes. It happens only after a stray variation selector in front of the joiner. The check that visible text stays the same is not affected.
+- Copies of 3.3.3 and older keep the old message until the user updates them once by hand.
+
 ## 3.3.3 (2026-11-26)
 
 ### Changed
