@@ -71,26 +71,43 @@ def report(reason: str, installed: str | None, latest: str | None) -> None:
     print("Manual update: see the 'Auto-update' section of README.md in the human-touch repository.")
 
 
-def update_via_git(repo_dir: str, quiet: bool) -> bool:
+def _git(repo_dir: str, *args: str) -> "subprocess.CompletedProcess[str]":
+    return subprocess.run(["git", "-C", repo_dir, *args], capture_output=True, text=True, timeout=20)
+
+
+def update_via_git(repo_dir: str, quiet: bool) -> str | None:
+    """Fast-forward to origin/main. Returns None on success, or the reason it
+    refused. It never resets, rebases or merges for real: when the history
+    cannot fast-forward, it explains the exact manual step instead."""
     try:
-        subprocess.run(["git", "-C", repo_dir, "fetch", "--tags", "origin"], check=True, timeout=20, capture_output=True)
-        subprocess.run(
-            ["git", "-C", repo_dir, "merge", "--ff-only", "origin/main"],
-            check=True, timeout=20, capture_output=True,
-        )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-        return False
+        if _git(repo_dir, "fetch", "--tags", "origin").returncode != 0:
+            return "git fetch failed; check the network and run `git fetch origin` manually"
+        branch = _git(repo_dir, "symbolic-ref", "--short", "-q", "HEAD").stdout.strip()
+        if branch != "main":
+            return f"the checked-out branch is {branch or 'detached HEAD'!r}, not 'main'; switch to main first"
+        if _git(repo_dir, "merge-base", "HEAD", "origin/main").returncode != 0:
+            return ("the remote history was rewritten, so this copy cannot fast-forward. "
+                    "The working tree is clean. Run: git branch backup-before-rewrite && git reset --hard origin/main")
+        if _git(repo_dir, "merge-base", "--is-ancestor", "HEAD", "origin/main").returncode != 0:
+            return ("this copy has commits that are not on origin/main, so it cannot fast-forward. "
+                    "Keep them first, then reset: git branch backup-local-commits && git reset --hard origin/main")
+        if _git(repo_dir, "merge", "--ff-only", "origin/main").returncode != 0:
+            return "git fast-forward failed; run `git pull --ff-only` manually"
+    except (subprocess.TimeoutExpired, OSError):
+        return "git did not answer in time; run `git pull --ff-only` manually"
     if not quiet:
         print("UPDATED via git fast-forward.")
-    return True
+    return None
 
 
 def update_via_copy(skill_dir: str, tarball_url: str, target_tag: str, quiet: bool) -> bool:
+    # The URL comes from the API response: check it BEFORE any request, then check where redirects ended.
+    if not tarball_url.startswith("https://") or not lib.host_in(tarball_url, "github.com"):
+        raise ValueError(f"unexpected download URL: {tarball_url!r}")
     req = urllib.request.Request(tarball_url, headers={"User-Agent": "human-touch-update-apply"})
     with urllib.request.urlopen(req, timeout=15) as resp:
-        host = resp.geturl().split("/")[2].lower()
-        if not (host == "codeload.github.com" or host.endswith(".github.com")):
-            raise ValueError(f"unexpected download host: {host!r}")
+        if not lib.host_in(resp.geturl(), "github.com"):
+            raise ValueError(f"unexpected download host: {lib.url_host(resp.geturl())!r}")
         data = resp.read(20_000_000)  # cap: a HumanTouch release is a few KB; refuse anything huge
 
     with tempfile.TemporaryDirectory(prefix="human-touch-update-") as tmp:
@@ -242,13 +259,14 @@ def main(argv: list[str]) -> int:
         if not lib.git_working_tree_clean(top):
             report("local git working tree has uncommitted changes; refusing to touch it", installed, release["tag"])
             return 1
-        if update_via_git(top, quiet):
+        git_error = update_via_git(top, quiet)
+        if git_error is None:
             new_version = lib.read_installed_version(skill_dir)
             if new_version != release["tag"].lstrip("v") and new_version != release["tag"]:
                 report(f"update ran but VERSION is now {new_version!r}, expected {release['tag']!r}", installed, release["tag"])
                 return 1
             return 0
-        report("git fast-forward update failed (fetch/merge error); run `git pull` manually", installed, release["tag"])
+        report(f"git update refused: {git_error}", installed, release["tag"])
         return 1
 
     if mode == "git-other":

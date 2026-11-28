@@ -569,5 +569,89 @@ class TestInstallModeDetection(TempDirsMixin, unittest.TestCase):
         self.assertEqual(lib.detect_install_mode(symlink_path), "git-official")
 
 
+class TestUrlHost(unittest.TestCase):
+    def test_host_is_parsed_not_split(self):
+        self.assertTrue(lib.host_in("https://api.github.com/repos/x", "github.com"))
+        self.assertTrue(lib.host_in("https://codeload.github.com/x", "github.com"))
+        self.assertFalse(lib.host_in("https://evil.example#.github.com/x", "github.com"))
+        self.assertFalse(lib.host_in("https://api.github.com@evil.example/x", "github.com"))
+        self.assertFalse(lib.host_in("https://evilgithub.com/x", "github.com"))
+        self.assertFalse(lib.host_in("", "github.com"))
+
+    def test_redirect_to_look_alike_host_is_refused(self):
+        resp = mock.MagicMock()
+        resp.__enter__.return_value = resp
+        resp.geturl.return_value = "https://evil.example#.github.com/x"
+        resp.read.return_value = b'{"tag_name": "v9.9.9"}'
+        with self.assertRaises(ValueError):
+            lib.fetch_latest_release(opener=lambda *a, **k: resp)
+
+    def test_tarball_url_is_checked_before_any_request(self):
+        with mock.patch.object(apply_update.urllib.request, "urlopen") as op:
+            with self.assertRaises(ValueError):
+                apply_update.update_via_copy("/nonexistent", "http://api.github.com/x", "v1", quiet=True)
+            with self.assertRaises(ValueError):
+                apply_update.update_via_copy("/nonexistent", "https://evil.example/x", "v1", quiet=True)
+            op.assert_not_called()
+
+
+class TestGitFastForward(unittest.TestCase):
+    """update_via_git on real temp repositories: success, rewritten remote history,
+    local-only commits, wrong branch. Nothing is ever reset or merged for real."""
+
+    ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+
+    def git(self, cwd, *args):
+        return subprocess.run(["git", "-c", "commit.gpgsign=false", *args], cwd=cwd, check=True, capture_output=True, text=True,
+                              env={**os.environ, **self.ENV}).stdout
+
+    def commit(self, cwd, name):
+        with open(os.path.join(cwd, name), "w", encoding="utf-8") as f:
+            f.write(name)
+        self.git(cwd, "add", name)
+        self.git(cwd, "commit", "-q", "-m", name)
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ht-test-ff-")
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.origin = os.path.join(self.tmp, "origin")
+        self.clone = os.path.join(self.tmp, "clone")
+        os.mkdir(self.origin)
+        self.git(self.origin, "init", "-q", "-b", "main")
+        self.commit(self.origin, "a")
+        self.git(self.tmp, "clone", "-q", self.origin, self.clone)
+
+    def test_fast_forward_succeeds(self):
+        self.commit(self.origin, "b")
+        self.assertIsNone(apply_update.update_via_git(self.clone, quiet=True))
+        self.assertTrue(os.path.exists(os.path.join(self.clone, "b")))
+
+    def test_rewritten_remote_history_is_explained_not_forced(self):
+        self.git(self.origin, "checkout", "-q", "--orphan", "new")
+        self.commit(self.origin, "z")
+        self.git(self.origin, "branch", "-q", "-D", "main")
+        self.git(self.origin, "branch", "-q", "-m", "main")
+        before = self.git(self.clone, "rev-parse", "HEAD")
+        reason = apply_update.update_via_git(self.clone, quiet=True)
+        self.assertIn("rewritten", reason)
+        self.assertIn("reset --hard origin/main", reason)
+        self.assertEqual(self.git(self.clone, "rev-parse", "HEAD"), before)
+
+    def test_local_only_commits_are_not_lost(self):
+        self.commit(self.clone, "mine")
+        self.commit(self.origin, "b")
+        before = self.git(self.clone, "rev-parse", "HEAD")
+        reason = apply_update.update_via_git(self.clone, quiet=True)
+        self.assertIn("not on origin/main", reason)
+        self.assertIn("git branch backup-local-commits", reason)
+        self.assertEqual(self.git(self.clone, "rev-parse", "HEAD"), before)
+
+    def test_other_branch_is_refused(self):
+        self.git(self.clone, "checkout", "-q", "-b", "work")
+        self.commit(self.origin, "b")
+        self.assertIn("not 'main'", apply_update.update_via_git(self.clone, quiet=True))
+        self.assertFalse(os.path.exists(os.path.join(self.clone, "b")))
+
+
 if __name__ == "__main__":
     unittest.main()

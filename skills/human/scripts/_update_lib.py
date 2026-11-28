@@ -40,6 +40,22 @@ WIKI_PAGE_TITLE = "Wikipedia:Signs of AI writing"
 WIKI_API_URL = "https://en.wikipedia.org/w/api.php"
 
 
+def url_host(url: str) -> str:
+    """Real host of a URL ('' when there is none). Parsed, not split on '/', so
+    'https://evil.example#.github.com/x' and 'https://api.github.com@evil.example/x'
+    are read as evil.example."""
+    try:
+        return (urllib.parse.urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
+def host_in(url: str, *domains: str) -> bool:
+    """True when url's host is one of domains or a subdomain of one."""
+    host = url_host(url)
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
 def skill_dir_from_script(script_path: str) -> str:
     """scripts/check_update.py -> the skill directory (its parent's parent)."""
     return os.path.dirname(os.path.dirname(os.path.abspath(script_path)))
@@ -86,9 +102,9 @@ def fetch_latest_release(
     with opener(req, timeout=timeout) as resp:
         # Guard against a redirect landing somewhere other than GitHub's own
         # infrastructure before we trust the body as "the official release".
-        host = (resp.geturl() or "").split("/")[2].lower() if "://" in (resp.geturl() or "") else ""
-        if host and not (host == "api.github.com" or host.endswith(".github.com")):
-            raise ValueError(f"unexpected redirect host: {host!r}")
+        final_url = resp.geturl() or ""
+        if "://" in final_url and not host_in(final_url, "github.com"):
+            raise ValueError(f"unexpected redirect host: {url_host(final_url)!r}")
         raw = resp.read(1_000_000)  # cap: refuse to buffer an unbounded response
     data = json.loads(raw.decode("utf-8", errors="replace"))
     if not isinstance(data, dict):
@@ -150,9 +166,9 @@ def fetch_wikipedia_revision(
         headers={"User-Agent": "human-touch-update-check"},
     )
     with opener(req, timeout=timeout) as resp:
-        host = (resp.geturl() or "").split("/")[2].lower() if "://" in (resp.geturl() or "") else ""
-        if host and not host.endswith(".wikipedia.org"):
-            raise ValueError(f"unexpected redirect host: {host!r}")
+        final_url = resp.geturl() or ""
+        if "://" in final_url and not host_in(final_url, "wikipedia.org"):
+            raise ValueError(f"unexpected redirect host: {url_host(final_url)!r}")
         raw = resp.read(1_000_000)
     data = json.loads(raw.decode("utf-8", errors="replace"))
     if not isinstance(data, dict):

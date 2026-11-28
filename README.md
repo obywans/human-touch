@@ -131,6 +131,7 @@ If a newer version exists, the rewrite is delivered exactly as normal, and only 
 - Any uncommitted local edits to a git install stop the update — it will not overwrite your changes.
 - Any problem at all (offline, GitHub down, a malformed response, a permission error, a fork, local edits) leaves every file exactly as it was and is reported as "could not update, here's why, and here's the manual command" — never a silent failure, never a partial write. `/human` itself is unaffected either way; the rewrite above still happened.
 - `python3 scripts/apply_update.py --dry-run` shows what would happen without changing anything.
+- If the history of the official repository was rewritten, a git install cannot fast-forward. The update stops and prints the recovery commands. It never runs them. Show them to the user. Keep a backup branch first: `git branch backup-before-rewrite && git reset --hard origin/main`.
 
 **If you installed before 2.1.0 (1.3.1 or earlier):** your existing updater already points at "the latest GitHub release", so it will find and apply 2.1.0 the same way it always found releases — nothing extra to do. **If you installed 2.0.0 specifically**, that release shipped with no updater at all, so there is nothing on your disk to trigger the check; copy or symlink `skills/human` again from this repository to get it back.
 
