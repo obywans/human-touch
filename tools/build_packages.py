@@ -24,7 +24,7 @@ def version():
         return f.read().strip()
 
 
-def files_under(base, skip_dirs=("__pycache__",)):
+def files_under(base, skip_dirs=("__pycache__", "CONTEXTO_CHATS", ".remember", ".git")):
     for dirpath, dirnames, names in os.walk(base):
         dirnames[:] = sorted(d for d in dirnames if d not in skip_dirs)
         for n in sorted(names):
@@ -68,7 +68,7 @@ def manifest():
             {"name": "human_metadata_inspect", "description": "List what a file reveals: EXIF, XMP, Office, PDF, HTML, EPUB, MP3, MP4/M4A (read-only)."},
             {"name": "human_update_check", "description": "Compare the installed version with the latest GitHub release. One HTTPS request, only when asked (read-only)."},
         ],
-        "compatibility": {"platforms": ["darwin", "win32", "linux"], "runtimes": {"python": ">=3.10"}},
+        "compatibility": {"platforms": ["darwin", "win32", "linux"], "runtimes": {"python": ">=3.9"}},
     }
 
 

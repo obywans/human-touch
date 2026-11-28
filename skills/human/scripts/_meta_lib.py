@@ -439,7 +439,8 @@ def strip_png(data, only, remove_c2pa=False):
             removed.append(blk)
         else:
             out.append(data[c["start"]:c["end"]])
-    tail_start = png_chunks(data)[-1]["end"]
+    chunks = png_chunks(data)
+    tail_start = chunks[-1]["end"] if chunks else len(PNG_SIG)  # a PNG cut right after its signature has no chunk
     out.append(data[tail_start:])
     return b"".join(out), removed
 
@@ -1547,6 +1548,12 @@ def _looks_like_video_mp4(data):
         return False
 
 
+# Everything a damaged or hostile file can raise from the parsers below. Callers only catch ValueError,
+# so these are turned into ValueError at the two entry points (detect_and_inspect and strip).
+PARSE_ERRORS = (zipfile.BadZipFile, struct.error, zlib.error, NotImplementedError, IndexError, KeyError,
+                OverflowError, RuntimeError, EOFError)
+
+
 def detect_and_inspect(path, data):
     low = path.lower()
     try:
@@ -1573,7 +1580,7 @@ def detect_and_inspect(path, data):
             ins["checked"] = ["plain text has no embedded metadata fields"]
             ins["not_checked"] = ["file-system metadata (owner, timestamps, extended attributes)"]
             return ins
-    except (ValueError, zipfile.BadZipFile, struct.error) as exc:
+    except (ValueError, *PARSE_ERRORS) as exc:
         raise ValueError(f"could not parse as {low.rsplit('.', 1)[-1]}: {exc}") from exc
     return inspect_unknown(data, "unsupported format")
 
@@ -1583,6 +1590,13 @@ def strip_supported(ins):
 
 
 def strip(path, data, ins, only, remove_c2pa=False):
+    try:
+        return _strip(data, ins, only, remove_c2pa)
+    except PARSE_ERRORS as exc:
+        raise ValueError(f"could not rewrite this {ins['format']} file: {exc}. Nothing was written") from exc
+
+
+def _strip(data, ins, only, remove_c2pa):
     if ins["format"] == "JPEG":
         return strip_jpeg(data, only, remove_c2pa)
     if ins["format"] == "PNG":

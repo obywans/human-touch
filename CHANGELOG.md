@@ -2,6 +2,21 @@
 
 Every correction is recorded here, starting with 1.0.1. Each version is tagged in git and published as a GitHub release.
 
+## 3.3.5 (2026-11-28)
+
+### Fixed
+- A damaged DOCX or EPUB file no longer ends in a Python error message. The parsers can raise `zlib.error`, `NotImplementedError`, `BadZipFile`, `IndexError` and others. The callers caught only `ValueError`. `detect_and_inspect` and `strip` now turn these errors into one `ValueError` with a short reason. The tools `metadata_inspect.py` and `file_clean.py` answer with exit code 1 and the reason. The MCP tools answer with `isError`.
+- `strip` on a PNG file that stops right after its signature raised `IndexError`. It returns the file as it is.
+- The MCP server writes its answers with the line end `\n` on Windows. A text-mode stdout wrote `\r\n`.
+- The `.mcpb` manifest asked for Python 3.10 or newer. The scripts and the tests run on Python 3.9, the `python3` of macOS. The manifest now asks for 3.9 or newer.
+- `tools/build_packages.py` skips the folders `CONTEXTO_CHATS`, `.remember` and `.git`, so a stray local folder cannot enter a package.
+
+### Notes
+- Evidence: 28,800 cut and corrupted files (JPEG, PNG, DOCX, PDF, EPUB, MP3, MP4, HTML, text) went through the inspector, the cleaner, the audit and the MCP tools. No tool hangs. After the fix, no tool ends with a Python error message.
+- 3 new tests. 265 tests pass on Python 3.9.6 and 3.15.
+- The writing rules do not change. The portable prompts in `adapters/` do not change. The changes are in the scripts and in the MCP server, which text-only hosts do not run.
+- Known limit, not changed: one run of the cleaner can leave a zero-width joiner after a stray variation selector. A second run removes it.
+
 ## 3.3.4 (2026-11-28)
 
 ### Fixed

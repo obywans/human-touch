@@ -277,9 +277,11 @@ def handle(msg):
 
 
 def main():
-    for stream in (sys.stdin, sys.stdout):
-        if hasattr(stream, "reconfigure"):
-            stream.reconfigure(encoding="utf-8")
+    # newline="\n": on Windows a text-mode stdout would write "\r\n", and the protocol is one JSON object per "\n" line.
+    if hasattr(sys.stdin, "reconfigure"):
+        sys.stdin.reconfigure(encoding="utf-8")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     for line in sys.stdin:
         line = line.strip()
         if not line:

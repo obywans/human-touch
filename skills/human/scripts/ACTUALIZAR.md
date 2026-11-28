@@ -8,7 +8,7 @@ WARNING: Never change a file or run an update command before the user agrees. Ev
 
 `UPDATE_AVAILABLE installed=A latest=B url=U` means a skill-folder install (a git clone or a copy).
 1. After the reply, ask one yes/no question. Example in Spanish: "Hay una actualización disponible: vB (tienes vA). ¿Quieres que la aplique ahora?"
-2. If the user answers yes, in any language, run from the skill directory: `python3 scripts/apply_update.py --quiet`.
+2. If the user answers yes, in any language, run from the skill directory: `python3 scripts/apply_update.py --quiet` (on Windows, `py -3` or `python` in place of `python3`).
 3. Report the real result in the user's language. If it fails, give the exact reason.
 4. If the user answers no or does not answer, do nothing. Do not ask again in this session.
 5. Never run `apply_update.py` before the user agrees. Never run it in the same reply that shows the question.

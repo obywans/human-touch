@@ -152,7 +152,7 @@ def main(argv=None) -> int:
     except PermissionError as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
         return 2
-    except (OSError, ValueError, zipfile.BadZipFile, subprocess.SubprocessError) as exc:
+    except (OSError, ValueError, subprocess.SubprocessError, *meta.PARSE_ERRORS) as exc:
         print(f"error: {exc}. Nothing was written.", file=sys.stderr)
         return 1
 
